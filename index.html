@@ -340,10 +340,7 @@ body.is-admin .admin-only-flex{display:flex!important}
         <div class="fg"><label class="fl">Kode SKU</label><input class="fi" id="sk-kode" placeholder="SP-001"></div>
         <div class="fg"><label class="fl">Nama Sparepart</label><input class="fi" id="sk-nama" placeholder="Nama lengkap sparepart"></div>
         <div class="fg"><label class="fl">Kategori</label>
-          <select class="fs" id="sk-kat">
-            <option value="filter">Filter</option><option value="rem">Rem</option><option value="transmisi">Transmisi</option>
-            <option value="kelistrikan">Kelistrikan</option><option value="pelumas">Pelumas</option><option value="lainnya">Lainnya</option>
-          </select>
+          <select class="fs" id="sk-kat"></select>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
           <div class="fg"><label class="fl">Satuan</label><input class="fi" id="sk-sat" placeholder="pcs"></div>
@@ -352,6 +349,17 @@ body.is-admin .admin-only-flex{display:flex!important}
         </div>
         <button class="btn bp btn-full" onclick="addSKU()">Simpan SKU</button>
       </div>
+
+      <!-- KELOLA KATEGORI -->
+      <div class="form-section">
+        <div class="ct">Kelola Kategori</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input class="fi" id="kat-baru" placeholder="Nama kategori baru..." style="flex:1">
+          <button class="btn bp btn-sm" onclick="tambahKat()">Tambah</button>
+        </div>
+        <div id="kat-list"></div>
+      </div>
+
       <div class="card">
         <div class="ch"><span class="ct">Daftar SKU</span><span class="b bi" id="sku-cnt">0 SKU</span></div>
         <div id="sku-list"></div>
@@ -523,7 +531,7 @@ body.is-admin .admin-only-flex{display:flex!important}
 
 <script>
 let db=null;
-let allS={},allT={},allK={};
+let allS={},allT={},allK={},allKat=[];
 let catFilter='',lowFilter=false;
 let currentUser=null;
 let trxDateFilter='';
@@ -600,6 +608,19 @@ function startApp(){
 }
 
 function listen(){
+  // Kategori listener
+  db.ref('kategori').on('value',snap=>{
+    allKat=[];
+    if(snap.val()) snap.forEach(c=>{allKat.push({key:c.key,nama:c.val().nama})});
+    // Kalau belum ada sama sekali, isi default
+    if(!allKat.length){
+      const defaults=['Filter','Rem','Transmisi','Kelistrikan','Pelumas','Lainnya'];
+      defaults.forEach(n=>db.ref('kategori').push({nama:n}));
+    }
+    renderKatSelect();
+    renderKatList();
+    updSel();
+  });
   db.ref('sparepart').on('value',snap=>{
     allS={};if(snap.val())snap.forEach(c=>{allS[c.key]={...c.val(),_key:c.key}});
     renderAll();
@@ -639,7 +660,7 @@ const kArr=()=>Object.values(allK);
 function updSel(){
   const so='<option value="">-- Pilih Sparepart --</option>'+sArr().map(v=>`<option value="${v._key}">${v.sku} — ${v.nama} (${v.stok} ${v.sat})</option>`).join('');
   ['i-sku','o-sku'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=so});
-  const cats=[...new Set(sArr().map(v=>v.kat))].sort();
+  const cats=allKat.map(k=>k.nama.toLowerCase());
   const ch=document.getElementById('s-chips');
   if(ch){
     const lc=sArr().filter(v=>v.stok<=v.min*1.5).length;
@@ -659,7 +680,43 @@ function updOutInfo(){
   document.getElementById('o-info').textContent=sp?'Stok tersedia: '+sp.stok+' '+sp.sat:'';
 }
 
-// ══ RENDER STOK ══
+// ══ KATEGORI ══
+function renderKatSelect(){
+  const el=document.getElementById('sk-kat');if(!el)return;
+  const cur=el.value;
+  el.innerHTML=allKat.map(k=>`<option value="${k.nama.toLowerCase()}">${k.nama}</option>`).join('');
+  if(cur)el.value=cur;
+}
+function renderKatList(){
+  const el=document.getElementById('kat-list');if(!el)return;
+  if(!allKat.length){el.innerHTML='<p style="font-size:13px;color:var(--mu);text-align:center;padding:12px">Belum ada kategori</p>';return}
+  el.innerHTML=allKat.map(k=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f4f6f9">
+      <span style="font-size:13px;font-weight:600">${k.nama}</span>
+      <button class="del-kat-btn" data-key="${k.key}" data-nama="${k.nama}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;cursor:pointer;padding:4px 10px;font-family:inherit">Hapus</button>
+    </div>`).join('');
+  document.querySelectorAll('.del-kat-btn').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const key=this.getAttribute('data-key');
+      const nama=this.getAttribute('data-nama');
+      showConfirm('Hapus kategori "'+nama+'"?','SKU yang sudah pakai kategori ini tidak terpengaruh.',async()=>{
+        try{await db.ref('kategori/'+key).remove();toast('Kategori dihapus')}catch(e){toast('Gagal','e')}
+      });
+    });
+  });
+}
+async function tambahKat(){
+  const nama=document.getElementById('kat-baru').value.trim();
+  if(!nama)return toast('Nama kategori tidak boleh kosong','e');
+  if(allKat.find(k=>k.nama.toLowerCase()===nama.toLowerCase()))return toast('Kategori sudah ada','e');
+  try{
+    await db.ref('kategori').push({nama});
+    document.getElementById('kat-baru').value='';
+    toast('Kategori "'+nama+'" ditambahkan');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+
 function filterLow(el){lowFilter=true;catFilter='';document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderStok()}
 function setCat(c,el){catFilter=c;lowFilter=false;document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderStok()}
 
