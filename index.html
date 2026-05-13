@@ -707,9 +707,19 @@ function renderSKU(){
     <div style="text-align:right;flex-shrink:0">
       <div style="font-size:18px;font-weight:900;color:${scol(d.stok,d.min)}">${d.stok}</div>
       <div style="font-size:10px;color:var(--mu)">min: ${d.min}</div>
-      ${isAdmin?`<button onclick="delSKU('${d._key}','${d.nama.replace(/'/g,"\\'")}');" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;padding:2px 0;font-family:inherit;margin-top:2px">Hapus</button>`:''}
+      ${isAdmin?`<button class="del-sku-btn" data-key="${d._key}" data-nama="${d.nama}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;cursor:pointer;padding:4px 10px;margin-top:4px;font-family:inherit">Hapus</button>`:''}
     </div>
   </div>`).join(''):emp('Belum ada SKU');
+  // Pasang event listener ke semua tombol hapus SKU
+  document.querySelectorAll('.del-sku-btn').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const key=this.getAttribute('data-key');
+      const nama=this.getAttribute('data-nama');
+      showConfirm('Hapus "'+nama+'"?','Data tidak dapat dikembalikan.',async()=>{
+        try{await db.ref('sparepart/'+key).remove();toast('Sparepart dihapus')}catch(e){toast('Gagal','e')}
+      });
+    });
+  });
 }
 
 // ══ RENDER TRANSAKSI ══
@@ -764,8 +774,18 @@ function renderKar(){
         &bull; @${k.username||k._key} &bull; ${k.hp||'-'}
       </div>
     </div>
-    <button onclick="delKar('${k._key}','${k.nama.replace(/'/g,"\\'")}');" style="font-size:12px;font-weight:700;color:var(--red);background:none;border:none;cursor:pointer;font-family:inherit;flex-shrink:0">Hapus</button>
+    <button class="del-kar-btn" data-key="${k._key}" data-nama="${k.nama}" style="font-size:12px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:8px;cursor:pointer;font-family:inherit;flex-shrink:0;padding:6px 12px">Hapus</button>
   </div>`).join(''):emp('Belum ada akun karyawan. Tap Tambah Akun untuk menambahkan.');
+  // Pasang event listener ke semua tombol hapus karyawan
+  document.querySelectorAll('.del-kar-btn').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const key=this.getAttribute('data-key');
+      const nama=this.getAttribute('data-nama');
+      showConfirm('Hapus akun "'+nama+'"?','Akun ini tidak dapat masuk setelah dihapus.',async()=>{
+        try{await db.ref('users/'+key).remove();toast('Akun dihapus')}catch(e){toast('Gagal','e')}
+      });
+    });
+  });
 }
 
 // ══ RENDER DASHBOARD ══
