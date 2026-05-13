@@ -707,7 +707,7 @@ function renderSKU(){
     <div style="text-align:right;flex-shrink:0">
       <div style="font-size:18px;font-weight:900;color:${scol(d.stok,d.min)}">${d.stok}</div>
       <div style="font-size:10px;color:var(--mu)">min: ${d.min}</div>
-      ${isAdmin?`<button onclick="delSKU('${d._key}','${d.nama.replace(/'/g,"\\'")}')}" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;padding:2px 0;font-family:inherit;margin-top:2px">Hapus</button>`:''}
+      ${isAdmin?`<button onclick="delSKU('${d._key}','${d.nama.replace(/'/g,"\\'")}');" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;padding:2px 0;font-family:inherit;margin-top:2px">Hapus</button>`:''}
     </div>
   </div>`).join(''):emp('Belum ada SKU');
 }
@@ -764,7 +764,7 @@ function renderKar(){
         &bull; @${k.username||k._key} &bull; ${k.hp||'-'}
       </div>
     </div>
-    <button onclick="delKar('${k._key}','${k.nama.replace(/'/g,"\\'")}')}" style="font-size:12px;font-weight:700;color:var(--red);background:none;border:none;cursor:pointer;font-family:inherit;flex-shrink:0">Hapus</button>
+    <button onclick="delKar('${k._key}','${k.nama.replace(/'/g,"\\'")}');" style="font-size:12px;font-weight:700;color:var(--red);background:none;border:none;cursor:pointer;font-family:inherit;flex-shrink:0">Hapus</button>
   </div>`).join(''):emp('Belum ada akun karyawan. Tap Tambah Akun untuk menambahkan.');
 }
 
