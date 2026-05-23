@@ -167,11 +167,6 @@ code{background:#f0f3f8;padding:2px 6px;border-radius:5px;font-size:11px;font-fa
 .filter-bar{display:flex;gap:8px;padding:0 14px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .filter-bar::-webkit-scrollbar{display:none}
 .search-wrap{padding:0 14px;margin-bottom:12px}
-.pg{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;border-top:1px solid #f4f6f9;background:#fff}
-.pg-info{font-size:11px;color:var(--mu);font-weight:600}
-.pg-btns{display:flex;align-items:center;gap:6px}
-.pg-btn{min-width:34px;height:30px;padding:0 10px;border:1.5px solid var(--bd);background:#fff;color:#4a5568;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
-.pg-btn:disabled{opacity:.45;cursor:not-allowed}
 
 /* ─── CREDIT ─── */
 .credit{text-align:center;padding:16px;font-size:11px;color:var(--mu);border-top:1px solid var(--bd);margin:8px 14px 0}
@@ -315,7 +310,7 @@ body.is-admin .admin-only-flex{display:flex!important}
         </div>
       </div>
       <div style="height:12px"></div>
-      <div class="search-wrap"><input class="si" id="s-q" placeholder="Cari nama, SKU, atau kategori..." oninput="paging.stok=1;renderStok()"></div>
+      <div class="search-wrap"><input class="si" id="s-q" placeholder="Cari nama, SKU, atau kategori..." oninput="renderStok()"></div>
       <div class="filter-bar" id="s-chips"><div class="chip on" onclick="setCat('',this)">Semua</div></div>
       <div class="card"><div id="stok-list"></div></div>
     </div>
@@ -393,18 +388,9 @@ body.is-admin .admin-only-flex{display:flex!important}
         <div class="sc"><div class="sc-label">Stok Saat Ini</div><div class="sc-val" id="l-stok">0</div></div>
         <div class="sc"><div class="sc-label">Total Transaksi</div><div class="sc-val" id="l-trx">0</div></div>
       </div>
-      <div class="card">
-        <div class="ch"><span class="ct">Per Kategori</span><button class="btn bo btn-sm" type="button" id="lap-btn-kat" onclick="toggleLapCard('kat')">Sembunyikan</button></div>
-        <div id="lap-body-kat"><div class="tw"><table><thead><tr><th>Kategori</th><th>SKU</th><th>Masuk</th><th>Keluar</th><th>Stok</th></tr></thead><tbody id="l-kat"></tbody></table></div><div id="l-kat-pg"></div></div>
-      </div>
-      <div class="card">
-        <div class="ch"><span class="ct">Stok Kritis</span><button class="btn bo btn-sm" type="button" id="lap-btn-kritis" onclick="toggleLapCard('kritis')">Sembunyikan</button></div>
-        <div id="lap-body-kritis"><div class="tw"><table><thead><tr><th>Nama</th><th>Stok</th><th>Min</th><th>Status</th></tr></thead><tbody id="l-kritis"></tbody></table></div><div id="l-kritis-pg"></div></div>
-      </div>
-      <div class="card">
-        <div class="ch"><span class="ct">Aktivitas Karyawan</span><button class="btn bo btn-sm" type="button" id="lap-btn-kar" onclick="toggleLapCard('kar')">Sembunyikan</button></div>
-        <div id="lap-body-kar"><div class="tw"><table><thead><tr><th>Nama</th><th>Jabatan</th><th>Trx</th><th>Masuk</th><th>Keluar</th></tr></thead><tbody id="l-kar"></tbody></table></div><div id="l-kar-pg"></div></div>
-      </div>
+      <div class="card"><div class="ch"><span class="ct">Per Kategori</span></div><div class="tw"><table><thead><tr><th>Kategori</th><th>SKU</th><th>Masuk</th><th>Keluar</th><th>Stok</th></tr></thead><tbody id="l-kat"></tbody></table></div></div>
+      <div class="card"><div class="ch"><span class="ct">Stok Kritis</span></div><div class="tw"><table><thead><tr><th>Nama</th><th>Stok</th><th>Min</th><th>Status</th></tr></thead><tbody id="l-kritis"></tbody></table></div></div>
+      <div class="card"><div class="ch"><span class="ct">Aktivitas Karyawan</span></div><div class="tw"><table><thead><tr><th>Nama</th><th>Jabatan</th><th>Trx</th><th>Masuk</th><th>Keluar</th></tr></thead><tbody id="l-kar"></tbody></table></div></div>
       <div style="display:flex;gap:8px;padding:0 14px;margin-bottom:14px">
         <button class="btn bo" style="flex:1" onclick="exportCSV()">Export CSV</button>
         <button class="btn bp" style="flex:1" onclick="window.print()">Cetak</button>
@@ -424,7 +410,7 @@ body.is-admin .admin-only-flex{display:flex!important}
           <select class="fs" style="font-size:13px;padding:9px 12px" id="r-tip"><option value="">Semua Tipe</option><option value="masuk">Masuk</option><option value="keluar">Keluar</option></select>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn bp" style="flex:1" onclick="renderRiw(true)">Cari</button>
+          <button class="btn bp" style="flex:1" onclick="renderRiw()">Cari</button>
           <button class="btn bo" style="flex:1" onclick="exportCSV()">Export</button>
         </div>
       </div>
@@ -469,6 +455,38 @@ body.is-admin .admin-only-flex{display:flex!important}
 </div><!-- /app -->
 
 <!-- ══ MODALS ══ -->
+
+<!-- Detail SKU -->
+<div class="mo" id="m-detail"><div class="md" style="max-height:85vh">
+  <div class="md-handle"></div>
+  <div style="margin-bottom:14px">
+    <div style="font-size:11px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Detail SKU</div>
+    <div class="mt" id="detail-title" style="margin-top:4px;margin-bottom:4px">-</div>
+    <div style="font-size:12px;color:var(--mu)"><code id="detail-sku">-</code></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+    <div style="background:#fff;border:1px solid var(--bd);border-radius:10px;padding:10px;text-align:center">
+      <div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase">Stok</div>
+      <div style="font-size:20px;font-weight:900;color:var(--text);margin-top:4px" id="detail-stok">0</div>
+    </div>
+    <div style="background:#e8f5ee;border:1px solid #b2dfca;border-radius:10px;padding:10px;text-align:center">
+      <div style="font-size:10px;color:#267a4a;font-weight:700;text-transform:uppercase">Masuk</div>
+      <div style="font-size:20px;font-weight:900;color:#3a6358;margin-top:4px" id="detail-masuk">+0</div>
+    </div>
+    <div style="background:#fdf0f0;border:1px solid #f0c0c0;border-radius:10px;padding:10px;text-align:center">
+      <div style="font-size:10px;color:#b83c3c;font-weight:700;text-transform:uppercase">Keluar</div>
+      <div style="font-size:20px;font-weight:900;color:#d95f5f;margin-top:4px" id="detail-keluar">-0</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div style="font-size:13px;font-weight:700">Riwayat Transaksi</div>
+    <span class="b bi" id="detail-trx-cnt">0</span>
+  </div>
+  <div style="background:#fff;border:1px solid var(--bd);border-radius:12px;max-height:300px;overflow-y:auto" id="detail-trx-list"></div>
+  <div class="mf">
+    <button class="btn bo btn-full" onclick="closeM('m-detail')">Tutup</button>
+  </div>
+</div></div>
 
 <!-- Confirm Hapus -->
 <div class="mo" id="m-confirm"><div class="md">
@@ -549,9 +567,6 @@ let allS={},allT={},allK={},allKat=[];
 let catFilter='',lowFilter=false;
 let currentUser=null;
 let trxDateFilter='';
-const pageSize={stok:8,sku:8,trx:8,kar:8,riw:8,kat:6,lKat:8,lKritis:8,lKar:8};
-const paging={stok:1,sku:1,trx:1,kar:1,riw:1,kat:1,lKat:1,lKritis:1,lKar:1};
-const lapCollapsed={kat:false,kritis:false,kar:false};
 
 // ══ SETUP FIREBASE ══
 function doSetup(){
@@ -673,50 +688,6 @@ const emp=msg=>`<p class="empty">${msg||'Belum ada data'}</p>`;
 const sArr=()=>Object.values(allS);
 const tArr=()=>Object.values(allT).sort((a,b)=>(b.ts||0)-(a.ts||0));
 const kArr=()=>Object.values(allK);
-function paginate(key,arr){
-  const size=pageSize[key]||8;
-  const total=arr.length;
-  const max=Math.max(1,Math.ceil(total/size));
-  if((paging[key]||1)>max)paging[key]=max;
-  if((paging[key]||1)<1)paging[key]=1;
-  const page=paging[key]||1;
-  const start=(page-1)*size;
-  return {items:arr.slice(start,start+size),total,page,max,size,start};
-}
-function pgUI(key,meta){
-  if(meta.total<=meta.size)return '';
-  return `<div class="pg">
-    <div class="pg-info">${meta.start+1}-${Math.min(meta.start+meta.items.length,meta.total)} dari ${meta.total}</div>
-    <div class="pg-btns">
-      <button class="pg-btn" onclick="setPage('${key}',${meta.page-1})" ${meta.page<=1?'disabled':''}>‹</button>
-      <button class="pg-btn" onclick="setPage('${key}',${meta.page+1})" ${meta.page>=meta.max?'disabled':''}>›</button>
-    </div>
-  </div>`;
-}
-function setPage(key,page){
-  const max=Math.max(1,Math.ceil((window.__pgTotal&&window.__pgTotal[key]?window.__pgTotal[key]:0)/(pageSize[key]||8)));
-  paging[key]=Math.min(max,Math.max(1,page));
-  if(key==='stok')return renderStok();
-  if(key==='sku')return renderSKU();
-  if(key==='trx')return renderTrx();
-  if(key==='kar')return renderKar();
-  if(key==='riw')return renderRiw();
-  if(key==='kat'&&typeof renderKatList==='function')return renderKatList();
-  if(key==='lKat'||key==='lKritis'||key==='lKar')return renderLap();
-}
-window.__pgTotal={};
-function applyLapCardState(key){
-  const body=document.getElementById('lap-body-'+key);
-  const btn=document.getElementById('lap-btn-'+key);
-  if(!body||!btn)return;
-  body.style.display=lapCollapsed[key]?'none':'block';
-  btn.textContent=lapCollapsed[key]?'Tampilkan':'Sembunyikan';
-}
-function toggleLapCard(key){
-  lapCollapsed[key]=!lapCollapsed[key];
-  applyLapCardState(key);
-}
-function initLapCards(){['kat','kritis','kar'].forEach(applyLapCardState)}
 
 function updSel(){
   const so='<option value="">-- Pilih Sparepart --</option>'+sArr().map(v=>`<option value="${v._key}">${v.sku} — ${v.nama} (${v.stok} ${v.sat})</option>`).join('');
@@ -751,13 +722,11 @@ function renderKatSelect(){
 function renderKatList(){
   const el=document.getElementById('kat-list');if(!el)return;
   if(!allKat.length){el.innerHTML='<p style="font-size:13px;color:var(--mu);text-align:center;padding:12px">Belum ada kategori</p>';return}
-  const meta=paginate('kat',allKat);
-  window.__pgTotal.kat=allKat.length;
-  el.innerHTML=meta.items.map(k=>`
+  el.innerHTML=allKat.map(k=>`
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f4f6f9">
       <span style="font-size:13px;font-weight:600">${k.nama}</span>
       <button class="del-kat-btn" data-key="${k.key}" data-nama="${k.nama}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;cursor:pointer;padding:4px 10px;font-family:inherit">Hapus</button>
-    </div>`).join('')+pgUI('kat',meta);
+    </div>`).join('');
   document.querySelectorAll('.del-kat-btn').forEach(btn=>{
     btn.addEventListener('click',function(){
       const key=this.getAttribute('data-key');
@@ -773,7 +742,6 @@ async function tambahKat(){
   if(!nama)return toast('Nama kategori tidak boleh kosong','e');
   if(allKat.find(k=>k.nama.toLowerCase()===nama.toLowerCase()))return toast('Kategori sudah ada','e');
   try{
-    paging.kat=1;
     await db.ref('kategori').push({nama});
     document.getElementById('kat-baru').value='';
     toast('Kategori "'+nama+'" ditambahkan');
@@ -781,8 +749,8 @@ async function tambahKat(){
 }
 
 
-function filterLow(el){paging.stok=1;lowFilter=true;catFilter='';document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderStok()}
-function setCat(c,el){paging.stok=1;catFilter=c;lowFilter=false;document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderStok()}
+function filterLow(el){lowFilter=true;catFilter='';document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderStok()}
+function setCat(c,el){catFilter=c;lowFilter=false;document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderStok()}
 
 function renderStok(){
   const q=(document.getElementById('s-q')||{}).value?.toLowerCase()||'';
@@ -794,9 +762,7 @@ function renderStok(){
   const low=sArr().filter(v=>v.stok<=v.min).length;
   const bn=document.getElementById('bn-dot');if(bn)bn.style.display=low?'block':'none';
   const el=document.getElementById('stok-list');if(!el)return;
-  const meta=paginate('stok',f);
-  window.__pgTotal.stok=f.length;
-  el.innerHTML=f.length?meta.items.map(d=>{
+  el.innerHTML=f.length?f.map(d=>{
     const pct=Math.min(100,Math.round((d.stok/Math.max(d.min*3,1))*100));
     const col=scol(d.stok,d.min);const[bc,lb]=sstat(d.stok,d.min);
     return`<div style="padding:14px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px">
@@ -814,7 +780,7 @@ function renderStok(){
         <span class="b ${bc}" style="font-size:10px;padding:2px 8px;margin-top:4px;display:inline-flex">${lb}</span>
       </div>
     </div>`;
-  }).join('')+pgUI('stok',meta):lowFilter?emp('Semua stok masih aman'):emp('Tidak ada sparepart');
+  }).join(''):lowFilter?emp('Semua stok masih aman'):emp('Tidak ada sparepart');
 }
 
 // ══ RENDER SKU ══
@@ -822,20 +788,35 @@ function renderSKU(){
   const el=document.getElementById('sku-list');const cnt=document.getElementById('sku-cnt');if(!el)return;
   const arr=sArr();if(cnt)cnt.textContent=arr.length+' SKU';
   const isAdmin=currentUser&&currentUser.role==='admin';
-  const meta=paginate('sku',arr);
-  window.__pgTotal.sku=arr.length;
-  el.innerHTML=arr.length?meta.items.map(d=>`<div style="padding:13px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px">
-    <div style="flex:1;min-width:0">
-      <div style="font-size:13px;font-weight:700">${d.nama}</div>
-      <div style="font-size:11px;color:var(--mu);margin-top:2px"><code>${d.sku}</code> &bull; ${cap(d.kat)} &bull; ${d.sat}</div>
+  // Hitung total masuk/keluar per SKU
+  const stat={};
+  tArr().forEach(t=>{
+    if(!stat[t.sku])stat[t.sku]={masuk:0,keluar:0};
+    if(t.tipe==='masuk')stat[t.sku].masuk+=t.qty;else stat[t.sku].keluar+=t.qty;
+  });
+  el.innerHTML=arr.length?arr.map(d=>{
+    const s=stat[d.sku]||{masuk:0,keluar:0};
+    return`<div style="padding:13px 16px;border-bottom:1px solid #f4f6f9">
+    <div style="display:flex;align-items:flex-start;gap:12px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700">${d.nama}</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px"><code>${d.sku}</code> &bull; ${cap(d.kat)} &bull; ${d.sat}</div>
+        <div style="display:flex;gap:10px;margin-top:6px">
+          <span style="font-size:11px;color:#3a6358;font-weight:700">↑ Masuk: ${s.masuk}</span>
+          <span style="font-size:11px;color:#d95f5f;font-weight:700">↓ Keluar: ${s.keluar}</span>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:18px;font-weight:900;color:${scol(d.stok,d.min)}">${d.stok}</div>
+        <div style="font-size:10px;color:var(--mu)">min: ${d.min}</div>
+      </div>
     </div>
-    <div style="text-align:right;flex-shrink:0">
-      <div style="font-size:18px;font-weight:900;color:${scol(d.stok,d.min)}">${d.stok}</div>
-      <div style="font-size:10px;color:var(--mu)">min: ${d.min}</div>
-      ${isAdmin?`<button class="del-sku-btn" data-key="${d._key}" data-nama="${d.nama}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;cursor:pointer;padding:4px 10px;margin-top:4px;font-family:inherit">Hapus</button>`:''}
+    <div style="display:flex;gap:6px;margin-top:10px;justify-content:flex-end">
+      <button class="detail-sku-btn" data-sku="${d.sku}" data-nama="${d.nama.replace(/"/g,'&quot;')}" style="font-size:11px;font-weight:700;color:var(--p2);background:var(--pl);border:1.5px solid #b2dfca;border-radius:6px;cursor:pointer;padding:5px 12px;font-family:inherit">Detail</button>
+      ${isAdmin?`<button class="del-sku-btn" data-key="${d._key}" data-nama="${d.nama.replace(/"/g,'&quot;')}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;cursor:pointer;padding:5px 12px;font-family:inherit">Hapus</button>`:''}
     </div>
-  </div>`).join('')+pgUI('sku',meta):emp('Belum ada SKU');
-  // Pasang event listener ke semua tombol hapus SKU
+  </div>`;}).join(''):emp('Belum ada SKU');
+  // Event listener tombol hapus
   document.querySelectorAll('.del-sku-btn').forEach(btn=>{
     btn.addEventListener('click',function(){
       const key=this.getAttribute('data-key');
@@ -845,11 +826,53 @@ function renderSKU(){
       });
     });
   });
+  // Event listener tombol detail
+  document.querySelectorAll('.detail-sku-btn').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const sku=this.getAttribute('data-sku');
+      const nama=this.getAttribute('data-nama');
+      showDetailSKU(sku,nama);
+    });
+  });
+}
+
+// ══ MODAL DETAIL SKU ══
+function showDetailSKU(sku,nama){
+  const trxs=tArr().filter(t=>t.sku===sku);
+  const masuk=trxs.filter(t=>t.tipe==='masuk').reduce((s,t)=>s+t.qty,0);
+  const keluar=trxs.filter(t=>t.tipe==='keluar').reduce((s,t)=>s+t.qty,0);
+  const sp=sArr().find(v=>v.sku===sku);
+  const stok=sp?sp.stok:0;
+
+  document.getElementById('detail-title').textContent=nama;
+  document.getElementById('detail-sku').textContent=sku;
+  document.getElementById('detail-stok').textContent=stok;
+  document.getElementById('detail-masuk').textContent='+'+masuk;
+  document.getElementById('detail-keluar').textContent='-'+keluar;
+  document.getElementById('detail-trx-cnt').textContent=trxs.length+' transaksi';
+
+  const list=document.getElementById('detail-trx-list');
+  if(!trxs.length){
+    list.innerHTML='<p style="text-align:center;color:var(--mu);padding:24px;font-size:13px">Belum ada transaksi untuk SKU ini</p>';
+  } else {
+    list.innerHTML=trxs.map(t=>`<div style="padding:11px 14px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:10px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${t.tipe==='masuk'?'#4f7c6e':'#d95f5f'};flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700">${t.karyawan}</div>
+        <div style="font-size:11px;color:var(--mu)">${t.tanggal} ${t.waktu}${t.ket&&t.ket!=='-'?' &bull; '+t.ket:''}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:14px;font-weight:900;color:${t.tipe==='masuk'?'#3a6358':'#d95f5f'}">${t.tipe==='masuk'?'+':'-'}${t.qty}</div>
+        <div style="font-size:10px;color:var(--mu)">${t.tipe==='masuk'?'Masuk':'Keluar'}</div>
+      </div>
+    </div>`).join('');
+  }
+  openM('m-detail');
 }
 
 // ══ RENDER TRANSAKSI ══
-function onPickDate(val){paging.trx=1;trxDateFilter=val;document.getElementById('trx-clear-btn').style.display=val?'inline-flex':'none';renderTrx()}
-function clearDate(){trxDateFilter='';paging.trx=1;document.getElementById('trx-date-pick').value='';document.getElementById('trx-clear-btn').style.display='none';renderTrx()}
+function onPickDate(val){trxDateFilter=val;document.getElementById('trx-clear-btn').style.display=val?'inline-flex':'none';renderTrx()}
+function clearDate(){trxDateFilter='';document.getElementById('trx-date-pick').value='';document.getElementById('trx-clear-btn').style.display='none';renderTrx()}
 function filterByDate(t){return !trxDateFilter||t.tanggal===trxDateFilter}
 
 function renderTrx(){
@@ -860,9 +883,7 @@ function renderTrx(){
   const aBtn=document.getElementById('approve-all-btn');
   if(aBtn)aBtn.style.display=isAdmin&&f.filter(t=>!t.approved).length>0?'inline-flex':'none';
   if(!f.length){el.innerHTML=emp('Belum ada transaksi');return}
-  const meta=paginate('trx',f);
-  window.__pgTotal.trx=f.length;
-  el.innerHTML=meta.items.map(t=>{
+  el.innerHTML=f.map(t=>{
     const isApproved=!!t.approved;
     return`<div style="padding:14px 16px;border-bottom:1px solid #f4f6f9">
       <div style="display:flex;align-items:flex-start;gap:10px">
@@ -885,16 +906,14 @@ function renderTrx(){
         </div>
       </div>
     </div>`;
-  }).join('')+pgUI('trx',meta);
+  }).join('');
 }
 
 // ══ RENDER KARYAWAN ══
 function renderKar(){
   const el=document.getElementById('kar-list');const cnt=document.getElementById('kar-cnt');if(!el)return;
   const arr=kArr();if(cnt)cnt.textContent=arr.length+' Karyawan';
-  const meta=paginate('kar',arr);
-  window.__pgTotal.kar=arr.length;
-  el.innerHTML=arr.length?meta.items.map(k=>`<div style="padding:13px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px">
+  el.innerHTML=arr.length?arr.map(k=>`<div style="padding:13px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px">
     <div class="av">${ini(k.nama)}</div>
     <div style="flex:1;min-width:0">
       <div style="font-size:13px;font-weight:700">${k.nama}</div>
@@ -904,7 +923,7 @@ function renderKar(){
       </div>
     </div>
     <button class="del-kar-btn" data-key="${k._key}" data-nama="${k.nama}" style="font-size:12px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:8px;cursor:pointer;font-family:inherit;flex-shrink:0;padding:6px 12px">Hapus</button>
-  </div>`).join('')+pgUI('kar',meta):emp('Belum ada akun karyawan. Tap Tambah Akun untuk menambahkan.');
+  </div>`).join(''):emp('Belum ada akun karyawan. Tap Tambah Akun untuk menambahkan.');
   // Pasang event listener ke semua tombol hapus karyawan
   document.querySelectorAll('.del-kar-btn').forEach(btn=>{
     btn.addEventListener('click',function(){
@@ -954,36 +973,23 @@ function renderLap(){
   const cats={};
   sv.forEach(v=>{if(!cats[v.kat])cats[v.kat]={sku:0,masuk:0,keluar:0,stok:0};cats[v.kat].sku++;cats[v.kat].stok+=v.stok});
   ta.forEach(t=>{if(!cats[t.kat])return;if(t.tipe==='masuk')cats[t.kat].masuk+=t.qty;else cats[t.kat].keluar+=t.qty});
-  const katRows=Object.entries(cats);
-  const katMeta=paginate('lKat',katRows);
-  window.__pgTotal.lKat=katRows.length;
-  const kt=el('l-kat');if(kt)kt.innerHTML=katRows.length?katMeta.items.map(([k,v])=>`<tr><td><span class="b bg">${cap(k)}</span></td><td>${v.sku}</td><td style="color:#3a6358;font-weight:700">+${v.masuk}</td><td style="color:#d95f5f;font-weight:700">-${v.keluar}</td><td><strong>${v.stok}</strong></td></tr>`).join(''):`<tr><td colspan="5" class="empty">Belum ada data</td></tr>`;
-  const ktPg=el('l-kat-pg');if(ktPg)ktPg.innerHTML=pgUI('lKat',katMeta);
+  const kt=el('l-kat');if(kt)kt.innerHTML=Object.entries(cats).map(([k,v])=>`<tr><td><span class="b bg">${cap(k)}</span></td><td>${v.sku}</td><td style="color:#3a6358;font-weight:700">+${v.masuk}</td><td style="color:#d95f5f;font-weight:700">-${v.keluar}</td><td><strong>${v.stok}</strong></td></tr>`).join('')||`<tr><td colspan="5" class="empty">Belum ada data</td></tr>`;
   const low=[...sv].filter(v=>v.stok<=v.min*1.5).sort((a,b)=>a.stok-b.stok);
-  const lowMeta=paginate('lKritis',low);
-  window.__pgTotal.lKritis=low.length;
-  const krt=el('l-kritis');if(krt)krt.innerHTML=low.length?lowMeta.items.map(v=>{const[bc,lb]=sstat(v.stok,v.min);return`<tr><td style="font-size:12px">${v.nama}</td><td style="font-weight:800;color:${scol(v.stok,v.min)}">${v.stok}</td><td style="color:var(--mu)">${v.min}</td><td><span class="b ${bc}">${lb}</span></td></tr>`}).join(''):`<tr><td colspan="4" class="empty">Semua stok aman</td></tr>`;
-  const krtPg=el('l-kritis-pg');if(krtPg)krtPg.innerHTML=pgUI('lKritis',lowMeta);
+  const krt=el('l-kritis');if(krt)krt.innerHTML=low.length?low.map(v=>{const[bc,lb]=sstat(v.stok,v.min);return`<tr><td style="font-size:12px">${v.nama}</td><td style="font-weight:800;color:${scol(v.stok,v.min)}">${v.stok}</td><td style="color:var(--mu)">${v.min}</td><td><span class="b ${bc}">${lb}</span></td></tr>`}).join(''):`<tr><td colspan="4" class="empty">Semua stok aman</td></tr>`;
   const kst={};ta.forEach(t=>{if(!kst[t.karyawan])kst[t.karyawan]={masuk:0,keluar:0};if(t.tipe==='masuk')kst[t.karyawan].masuk+=t.qty;else kst[t.karyawan].keluar+=t.qty});
   const krt2=el('l-kar');
   const allUsers=[...ka,...(currentUser?[{nama:'Administrator',jabatan:'Admin'}]:[])];
-  const karMeta=paginate('lKar',allUsers);
-  window.__pgTotal.lKar=allUsers.length;
-  if(krt2)krt2.innerHTML=allUsers.length?karMeta.items.map(k=>{const s=kst[k.nama]||{masuk:0,keluar:0};return`<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="width:26px;height:26px;font-size:10px">${ini(k.nama)}</div>${k.nama}</div></td><td><span class="b ${jcol[k.jabatan]||'bg'}" style="font-size:10px">${k.jabatan}</span></td><td><strong>${s.masuk+s.keluar}</strong></td><td style="color:#3a6358;font-weight:700">+${s.masuk}</td><td style="color:#d95f5f;font-weight:700">-${s.keluar}</td></tr>`}).join(''):`<tr><td colspan="5" class="empty">Belum ada karyawan</td></tr>`;
-  const karPg=el('l-kar-pg');if(karPg)karPg.innerHTML=pgUI('lKar',karMeta);
+  if(krt2)krt2.innerHTML=allUsers.length?allUsers.map(k=>{const s=kst[k.nama]||{masuk:0,keluar:0};return`<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="width:26px;height:26px;font-size:10px">${ini(k.nama)}</div>${k.nama}</div></td><td><span class="b ${jcol[k.jabatan]||'bg'}" style="font-size:10px">${k.jabatan}</span></td><td><strong>${s.masuk+s.keluar}</strong></td><td style="color:#3a6358;font-weight:700">+${s.masuk}</td><td style="color:#d95f5f;font-weight:700">-${s.keluar}</td></tr>`}).join(''):`<tr><td colspan="5" class="empty">Belum ada karyawan</td></tr>`;
 }
 
 // ══ RENDER RIWAYAT ══
-function renderRiw(resetPage=false){
-  if(resetPage)paging.riw=1;
+function renderRiw(){
   const el=document.getElementById('riw-list');const cnt=document.getElementById('r-cnt');if(!el)return;
   const d1=(document.getElementById('r-d1')||{}).value,d2=(document.getElementById('r-d2')||{}).value;
   const rk=(document.getElementById('r-kar')||{}).value,rt=(document.getElementById('r-tip')||{}).value;
   const f=tArr().filter(t=>(!d1||t.tanggal>=d1)&&(!d2||t.tanggal<=d2)&&(!rk||t.karyawan===rk)&&(!rt||t.tipe===rt));
   if(cnt)cnt.textContent=f.length+' transaksi';
-  const meta=paginate('riw',f);
-  window.__pgTotal.riw=f.length;
-  el.innerHTML=f.length?meta.items.map(t=>`<div class="trx-item">
+  el.innerHTML=f.length?f.map(t=>`<div class="trx-item">
     <div class="trx-type" style="background:${t.tipe==='masuk'?'#4f7c6e':'#d95f5f'}"></div>
     <div class="trx-info">
       <div class="trx-nama">${t.sparepart}</div>
@@ -991,7 +997,7 @@ function renderRiw(resetPage=false){
       ${t.ket&&t.ket!=='-'?`<div style="font-size:11px;color:var(--mu);margin-top:2px">${t.ket}</div>`:''}
     </div>
     <div class="trx-qty" style="color:${t.tipe==='masuk'?'#3a6358':'#d95f5f'}">${t.tipe==='masuk'?'+':'-'}${t.qty}</div>
-  </div>`).join('')+pgUI('riw',meta):emp('Tidak ada data');
+  </div>`).join(''):emp('Tidak ada data');
 }
 
 function renderAll(){renderStok();renderSKU();renderDash();updSel();updRiwKar()}
@@ -1158,7 +1164,6 @@ window.onload=()=>{
       return;
     }catch(e){}
   }
-  initLapCards();
   showScreen('login');
 };
 </script>
