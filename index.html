@@ -795,11 +795,20 @@ function renderSKU(){
   const el=document.getElementById('sku-list');const cnt=document.getElementById('sku-cnt');if(!el)return;
   const arr=sArr();if(cnt)cnt.textContent=arr.length+' SKU';
   const isAdmin=currentUser&&currentUser.role==='admin';
-  // Hitung total masuk/keluar per SKU
+  // Hitung total masuk/keluar per SKU (match by SKU OR nama untuk data lama)
   const stat={};
-  tArr().forEach(t=>{
-    if(!stat[t.sku])stat[t.sku]={masuk:0,keluar:0};
-    if(t.tipe==='masuk')stat[t.sku].masuk+=t.qty;else stat[t.sku].keluar+=t.qty;
+  arr.forEach(d=>{
+    const skuLow=(d.sku||'').toLowerCase();
+    const namaLow=(d.nama||'').toLowerCase();
+    const tx=tArr().filter(t=>{
+      const tsku=(t.sku||'').toLowerCase();
+      const tnama=(t.sparepart||'').toLowerCase();
+      return tsku===skuLow||tnama===namaLow;
+    });
+    stat[d.sku]={
+      masuk:tx.filter(t=>t.tipe==='masuk').reduce((s,t)=>s+t.qty,0),
+      keluar:tx.filter(t=>t.tipe==='keluar').reduce((s,t)=>s+t.qty,0)
+    };
   });
   el.innerHTML=arr.length?arr.map(d=>{
     const s=stat[d.sku]||{masuk:0,keluar:0};
@@ -845,7 +854,14 @@ function renderSKU(){
 
 // ══ MODAL DETAIL SKU ══
 function showDetailSKU(sku,nama){
-  const trxs=tArr().filter(t=>t.sku===sku);
+  // Match by SKU (case-insensitive) OR by nama sparepart (fallback for old data)
+  const skuLow=(sku||'').toLowerCase();
+  const namaLow=(nama||'').toLowerCase();
+  const trxs=tArr().filter(t=>{
+    const tsku=(t.sku||'').toLowerCase();
+    const tnama=(t.sparepart||'').toLowerCase();
+    return tsku===skuLow||tnama===namaLow;
+  });
   const masuk=trxs.filter(t=>t.tipe==='masuk').reduce((s,t)=>s+t.qty,0);
   const keluar=trxs.filter(t=>t.tipe==='keluar').reduce((s,t)=>s+t.qty,0);
   const sp=sArr().find(v=>v.sku===sku);
