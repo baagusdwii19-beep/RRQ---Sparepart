@@ -1088,33 +1088,48 @@ async function addSKU(){
   }catch(e){toast('Gagal: '+e.message,'e')}
 }
 
-// Sinkronkan stok awal untuk SKU lama yang belum ada transaksinya
+// Sinkronkan stok awal — hitung selisih stok dengan transaksi yang ada
 async function syncStokAwal(){
   const sps=sArr();
   const txs=tArr();
-  // Cek SKU mana yang belum punya transaksi sama sekali
-  const skuPunyaTx=new Set();
-  txs.forEach(t=>{
-    if(t.sku)skuPunyaTx.add(t.sku.toLowerCase());
-    if(t.sparepart)skuPunyaTx.add('nama:'+t.sparepart.toLowerCase());
+  // Untuk tiap SKU, hitung total masuk - keluar dari transaksi yang ada
+  const skuPerlu=[];
+  sps.forEach(s=>{
+    if(s.stok<=0)return;
+    const skuLow=(s.sku||'').toLowerCase();
+    const namaLow=(s.nama||'').toLowerCase();
+    const tx=txs.filter(t=>{
+      const tsku=(t.sku||'').toLowerCase();
+      const tnama=(t.sparepart||'').toLowerCase();
+      return tsku===skuLow||tnama===namaLow;
+    });
+    const totalMasuk=tx.filter(t=>t.tipe==='masuk').reduce((sum,t)=>sum+t.qty,0);
+    const totalKeluar=tx.filter(t=>t.tipe==='keluar').reduce((sum,t)=>sum+t.qty,0);
+    const selisih=s.stok-(totalMasuk-totalKeluar);
+    // Kalau selisih > 0, berarti ada stok yang belum tercatat → buat transaksi "Stok awal"
+    if(selisih>0){
+      skuPerlu.push({sp:s,qty:selisih});
+    }
   });
-  const skuBelum=sps.filter(s=>{
-    return s.stok>0&&!skuPunyaTx.has(s.sku.toLowerCase())&&!skuPunyaTx.has('nama:'+s.nama.toLowerCase());
-  });
-  if(!skuBelum.length){toast('Semua SKU sudah tersinkron');return}
-  showConfirm('Sinkronkan '+skuBelum.length+' SKU?','Akan membuat transaksi "Stok awal" untuk SKU yang belum punya riwayat transaksi.',async()=>{
-    try{
-      const at=nowDate()+' '+nowTime();
-      for(const s of skuBelum){
-        await db.ref('transaksi').push({
-          ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),
-          karyawan:currentUser.nama,sparepart:s.nama,sku:s.sku,kat:s.kat,
-          tipe:'masuk',qty:s.stok,stokSesudah:s.stok,ket:'Stok awal (sinkronisasi)',approved:true,approvedAt:at
-        });
-      }
-      toast(skuBelum.length+' SKU berhasil disinkronkan');
-    }catch(e){toast('Gagal: '+e.message,'e')}
-  });
+  if(!skuPerlu.length){toast('Semua stok sudah tersinkron');return}
+  showConfirm('Sinkronkan '+skuPerlu.length+' SKU?',
+    'Akan membuat transaksi "Stok awal" sebesar selisih stok yang belum tercatat. Setelah ini, Stok = Masuk - Keluar.',
+    async()=>{
+      try{
+        const at=nowDate()+' '+nowTime();
+        for(const item of skuPerlu){
+          const s=item.sp;
+          await db.ref('transaksi').push({
+            ts:Date.now()-86400000,
+            tanggal:nowDate(),waktu:nowTime(),
+            karyawan:currentUser.nama,sparepart:s.nama,sku:s.sku,kat:s.kat,
+            tipe:'masuk',qty:item.qty,stokSesudah:s.stok,
+            ket:'Stok awal (sinkronisasi)',approved:true,approvedAt:at
+          });
+        }
+        toast(skuPerlu.length+' SKU disinkronkan');
+      }catch(e){toast('Gagal: '+e.message,'e')}
+    });
 }
 
 async function doKar(){
