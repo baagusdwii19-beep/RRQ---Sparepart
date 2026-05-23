@@ -173,9 +173,10 @@ code{background:#f0f3f8;padding:2px 6px;border-radius:5px;font-size:11px;font-fa
 .credit strong{color:var(--p2);font-weight:800}
 
 /* ─── ADMIN BADGE ─── */
-.admin-only{display:none}
-body.is-admin .admin-only{display:block}
-body.is-admin .admin-only-flex{display:flex!important}
+.admin-only{display:none!important}
+body.is-admin .admin-only{display:inline-flex!important}
+body.is-admin .admin-only.btn{display:inline-flex!important}
+body.is-admin button.admin-only{display:inline-flex!important}
 
 /* ─── TOAST ─── */
 #toast{position:fixed;bottom:calc(var(--nav-h) + 14px);left:14px;right:14px;padding:13px 18px;border-radius:12px;font-size:13px;font-weight:700;z-index:999;display:none;color:#fff;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.2)}
@@ -361,7 +362,12 @@ body.is-admin .admin-only-flex{display:flex!important}
       </div>
 
       <div class="card">
-        <div class="ch"><span class="ct">Daftar SKU</span><span class="b bi" id="sku-cnt">0 SKU</span></div>
+        <div class="ch"><span class="ct">Daftar SKU</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn bo btn-sm admin-only" onclick="syncStokAwal()" style="display:none">Sinkronkan Stok Awal</button>
+            <span class="b bi" id="sku-cnt">0 SKU</span>
+          </div>
+        </div>
         <div id="sku-list"></div>
       </div>
     </div>
@@ -1069,9 +1075,46 @@ async function addSKU(){
   if(sArr().find(v=>v.sku===kode))return toast('Kode SKU sudah ada','e');
   try{
     await db.ref('sparepart').push({sku:kode,nama,kat,sat,stok,min});
+    // Catat transaksi masuk untuk stok awal
+    if(stok>0){
+      await db.ref('transaksi').push({
+        ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),
+        karyawan:currentUser.nama,sparepart:nama,sku:kode,kat,
+        tipe:'masuk',qty:stok,stokSesudah:stok,ket:'Stok awal SKU',approved:true,approvedAt:nowDate()+' '+nowTime()
+      });
+    }
     ['sk-kode','sk-nama','sk-sat','sk-stok','sk-min'].forEach(id=>document.getElementById(id).value='');
     toast('SKU '+kode+' ditambahkan');
   }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+// Sinkronkan stok awal untuk SKU lama yang belum ada transaksinya
+async function syncStokAwal(){
+  const sps=sArr();
+  const txs=tArr();
+  // Cek SKU mana yang belum punya transaksi sama sekali
+  const skuPunyaTx=new Set();
+  txs.forEach(t=>{
+    if(t.sku)skuPunyaTx.add(t.sku.toLowerCase());
+    if(t.sparepart)skuPunyaTx.add('nama:'+t.sparepart.toLowerCase());
+  });
+  const skuBelum=sps.filter(s=>{
+    return s.stok>0&&!skuPunyaTx.has(s.sku.toLowerCase())&&!skuPunyaTx.has('nama:'+s.nama.toLowerCase());
+  });
+  if(!skuBelum.length){toast('Semua SKU sudah tersinkron');return}
+  showConfirm('Sinkronkan '+skuBelum.length+' SKU?','Akan membuat transaksi "Stok awal" untuk SKU yang belum punya riwayat transaksi.',async()=>{
+    try{
+      const at=nowDate()+' '+nowTime();
+      for(const s of skuBelum){
+        await db.ref('transaksi').push({
+          ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),
+          karyawan:currentUser.nama,sparepart:s.nama,sku:s.sku,kat:s.kat,
+          tipe:'masuk',qty:s.stok,stokSesudah:s.stok,ket:'Stok awal (sinkronisasi)',approved:true,approvedAt:at
+        });
+      }
+      toast(skuBelum.length+' SKU berhasil disinkronkan');
+    }catch(e){toast('Gagal: '+e.message,'e')}
+  });
 }
 
 async function doKar(){
