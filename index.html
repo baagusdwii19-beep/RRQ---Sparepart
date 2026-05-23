@@ -765,7 +765,7 @@ function renderStok(){
   el.innerHTML=f.length?f.map(d=>{
     const pct=Math.min(100,Math.round((d.stok/Math.max(d.min*3,1))*100));
     const col=scol(d.stok,d.min);const[bc,lb]=sstat(d.stok,d.min);
-    return`<div style="padding:14px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px">
+    return`<div class="stok-row" data-sku="${d.sku}" data-nama="${d.nama.replace(/"/g,'&quot;')}" style="padding:14px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px;cursor:pointer">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.nama}</div>
         <div style="font-size:11px;color:var(--mu);margin-top:3px"><code>${d.sku}</code> &bull; <span class="b bg" style="font-size:10px;padding:2px 7px">${cap(d.kat)}</span></div>
@@ -779,8 +779,15 @@ function renderStok(){
         <div style="font-size:10px;color:var(--mu);margin-top:2px">${d.sat}</div>
         <span class="b ${bc}" style="font-size:10px;padding:2px 8px;margin-top:4px;display:inline-flex">${lb}</span>
       </div>
+      <div style="color:var(--mu);font-size:18px;flex-shrink:0">›</div>
     </div>`;
   }).join(''):lowFilter?emp('Semua stok masih aman'):emp('Tidak ada sparepart');
+  // Event listener untuk tap card → buka detail
+  document.querySelectorAll('.stok-row').forEach(row=>{
+    row.addEventListener('click',function(){
+      showDetailSKU(this.getAttribute('data-sku'),this.getAttribute('data-nama'));
+    });
+  });
 }
 
 // ══ RENDER SKU ══
