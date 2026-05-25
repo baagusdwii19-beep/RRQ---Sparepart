@@ -116,7 +116,7 @@ tr:last-child td{border-bottom:none}
 /* ─── FORM ─── */
 .fg{margin-bottom:13px}
 .fl{font-size:11px;font-weight:700;color:var(--mu);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.04em}
-.fi,.fs{width:100%;padding:11px 13px;border:1.5px solid var(--bd);border-radius:10px;font-size:14px;outline:none;background:#fff;font-family:inherit;color:var(--text);-webkit-appearance:none;transition:border .15s}
+.fi,.fs{width:100%;padding:11px 13px;border:1.5px solid var(--bd);border-radius:10px;font-size:14px;outline:none;background:#fff;font-family:inherit;color:var(--text);-webkit-appearance:none;appearance:none;transition:border .15s}
 .fi:focus,.fs:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(79,124,110,.1)}
 .form-section{background:#fff;border-radius:14px;border:1px solid var(--bd);margin:0 14px 12px;padding:16px}
 .form-section .ct{font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bd)}
@@ -167,6 +167,19 @@ code{background:#f0f3f8;padding:2px 6px;border-radius:5px;font-size:11px;font-fa
 .filter-bar{display:flex;gap:8px;padding:0 14px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .filter-bar::-webkit-scrollbar{display:none}
 .search-wrap{padding:0 14px;margin-bottom:12px}
+
+/* ─── PAGINATION ─── */
+.pager{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 10px;border-top:1px solid #f4f6f9;background:#fff}
+.pager-btn{padding:6px 12px;border-radius:8px;border:1.5px solid var(--bd);background:#fff;color:#4a5568;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;min-width:72px}
+.pager-btn:disabled{opacity:.5;cursor:not-allowed}
+.pager-info{font-size:12px;font-weight:700;color:var(--mu);min-width:90px;text-align:center}
+.pager-size{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--mu);font-weight:700}
+.pager-size select{padding:5px 8px;border:1.5px solid var(--bd);border-radius:8px;background:#fff;color:var(--text);font-size:12px;font-family:inherit;outline:none}
+
+/* ─── COLLAPSE ─── */
+.collapse-btn{padding:5px 10px;border:1.5px solid var(--bd);border-radius:8px;background:#fff;color:#4a5568;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.collapsible{overflow:hidden;max-height:2000px;opacity:1;transform:translateY(0);transition:max-height .28s ease,opacity .22s ease,transform .22s ease}
+.collapsible.is-closed{max-height:0;opacity:0;transform:translateY(-4px);pointer-events:none}
 
 /* ─── CREDIT ─── */
 .credit{text-align:center;padding:16px;font-size:11px;color:var(--mu);border-top:1px solid var(--bd);margin:8px 14px 0}
@@ -311,7 +324,7 @@ body.is-admin button.admin-only{display:inline-flex!important}
         </div>
       </div>
       <div style="height:12px"></div>
-      <div class="search-wrap"><input class="si" id="s-q" placeholder="Cari nama, SKU, atau kategori..." oninput="renderStok()"></div>
+      <div class="search-wrap"><input class="si" id="s-q" placeholder="Cari nama, SKU, atau kategori..." oninput="onStokSearch()"></div>
       <div class="filter-bar" id="s-chips"><div class="chip on" onclick="setCat('',this)">Semua</div></div>
       <div class="card"><div id="stok-list"></div></div>
     </div>
@@ -353,12 +366,17 @@ body.is-admin button.admin-only{display:inline-flex!important}
 
       <!-- KELOLA KATEGORI -->
       <div class="form-section">
-        <div class="ct">Kelola Kategori</div>
-        <div style="display:flex;gap:8px;margin-bottom:12px">
-          <input class="fi" id="kat-baru" placeholder="Nama kategori baru..." style="flex:1">
-          <button class="btn bp btn-sm" onclick="tambahKat()">Tambah</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
+          <div class="ct" style="margin:0;padding:0;border:none">Kelola Kategori</div>
+          <button class="collapse-btn" id="col-kat-btn" onclick="toggleSkuSection('kat',this)">Tutup</button>
         </div>
-        <div id="kat-list"></div>
+        <div id="sku-kat-wrap" class="collapsible">
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <input class="fi" id="kat-baru" placeholder="Nama kategori baru..." style="flex:1">
+            <button class="btn bp btn-sm" onclick="tambahKat()">Tambah</button>
+          </div>
+          <div id="kat-list"></div>
+        </div>
       </div>
 
       <div class="card">
@@ -366,9 +384,10 @@ body.is-admin button.admin-only{display:inline-flex!important}
           <div style="display:flex;gap:8px;align-items:center">
             <button class="btn bo btn-sm admin-only" onclick="syncStokAwal()" style="display:none">Sinkronkan Stok Awal</button>
             <span class="b bi" id="sku-cnt">0 SKU</span>
+            <button class="collapse-btn" id="col-sku-btn" onclick="toggleSkuSection('sku',this)">Tutup</button>
           </div>
         </div>
-        <div id="sku-list"></div>
+        <div id="sku-list-wrap" class="collapsible"><div id="sku-list"></div></div>
       </div>
     </div>
 
@@ -416,7 +435,7 @@ body.is-admin button.admin-only{display:inline-flex!important}
           <select class="fs" style="font-size:13px;padding:9px 12px" id="r-tip"><option value="">Semua Tipe</option><option value="masuk">Masuk</option><option value="keluar">Keluar</option></select>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn bp" style="flex:1" onclick="renderRiw()">Cari</button>
+          <button class="btn bp" style="flex:1" onclick="applyRiwFilter()">Cari</button>
           <button class="btn bo" style="flex:1" onclick="exportCSV()">Export</button>
         </div>
       </div>
@@ -565,6 +584,24 @@ body.is-admin button.admin-only{display:inline-flex!important}
   </div>
 </div></div>
 
+<!-- Edit SKU -->
+<div class="mo" id="m-sku-edit"><div class="md">
+  <div class="md-handle"></div>
+  <div class="mt">Edit SKU</div>
+  <div class="fg"><label class="fl">Kode SKU</label><input class="fi" id="e-sk-kode" placeholder="SP-001"></div>
+  <div class="fg"><label class="fl">Nama Sparepart</label><input class="fi" id="e-sk-nama" placeholder="Nama lengkap sparepart"></div>
+  <div class="fg"><label class="fl">Kategori</label><select class="fs" id="e-sk-kat"></select></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+    <div class="fg"><label class="fl">Satuan</label><input class="fi" id="e-sk-sat" placeholder="pcs"></div>
+    <div class="fg"><label class="fl">Stok</label><input class="fi" type="number" id="e-sk-stok" placeholder="0" min="0" inputmode="numeric"></div>
+    <div class="fg"><label class="fl">Min. Stok</label><input class="fi" type="number" id="e-sk-min" placeholder="10" min="0" inputmode="numeric"></div>
+  </div>
+  <div class="mf">
+    <button class="btn bp btn-full" onclick="saveEditSKU()">Simpan Perubahan</button>
+    <button class="btn bo btn-full" onclick="closeM('m-sku-edit')">Batal</button>
+  </div>
+</div></div>
+
 <div id="toast"></div>
 
 <script>
@@ -573,6 +610,10 @@ let allS={},allT={},allK={},allKat=[];
 let catFilter='',lowFilter=false;
 let currentUser=null;
 let trxDateFilter='';
+const pagerState={stok:1,trx:1,sku:1,kar:1,riw:1,dRecent:1,dLow:1,lKat:1,lKritis:1,lKar:1};
+const pagerSize={stok:10,trx:10,sku:10,kar:10,riw:10,dRecent:5,dLow:5,lKat:5,lKritis:5,lKar:5};
+const skuSectionOpen={kat:true,sku:true};
+let editSkuKey='';
 
 // ══ SETUP FIREBASE ══
 function doSetup(){
@@ -695,6 +736,53 @@ const sArr=()=>Object.values(allS);
 const tArr=()=>Object.values(allT).sort((a,b)=>(b.ts||0)-(a.ts||0));
 const kArr=()=>Object.values(allK);
 
+function getPaged(arr,key){
+  const size=pagerSize[key]||10;
+  const total=Math.max(1,Math.ceil(arr.length/size));
+  if(!pagerState[key]||pagerState[key]<1)pagerState[key]=1;
+  if(pagerState[key]>total)pagerState[key]=total;
+  const page=pagerState[key];
+  const start=(page-1)*size;
+  return{items:arr.slice(start,start+size),page,total,count:arr.length};
+}
+function pagerHTML(key,page,total,count){
+  if(count===0||total<=1)return'';
+  const size=pagerSize[key]||10;
+  return`<div class="pager">
+    <label class="pager-size">Tampil
+      <select onchange="setPageSize('${key}',this.value)">
+        <option value="5" ${size===5?'selected':''}>5</option>
+        <option value="10" ${size===10?'selected':''}>10</option>
+        <option value="20" ${size===20?'selected':''}>20</option>
+      </select>
+    </label>
+    <button class="pager-btn" onclick="setPage('${key}',${page-1})" ${page<=1?'disabled':''}>Sebelumnya</button>
+    <span class="pager-info">Hal ${page} / ${total}</span>
+    <button class="pager-btn" onclick="setPage('${key}',${page+1})" ${page>=total?'disabled':''}>Berikutnya</button>
+  </div>`;
+}
+function setPageSize(key,size){
+  const n=parseInt(size,10);
+  pagerSize[key]=[5,10,20].includes(n)?n:10;
+  pagerState[key]=1;
+  setPage(key,1);
+}
+function setPage(key,page){
+  pagerState[key]=Math.max(1,page);
+  if(key==='stok')return renderStok();
+  if(key==='trx')return renderTrx();
+  if(key==='sku')return renderSKU();
+  if(key==='kar')return renderKar();
+  if(key==='riw')return renderRiw();
+  if(key==='dRecent'||key==='dLow')return renderDash();
+  if(key==='lKat'||key==='lKritis'||key==='lKar')return renderLap();
+}
+
+function onStokSearch(){
+  pagerState.stok=1;
+  renderStok();
+}
+
 function updSel(){
   const so='<option value="">-- Pilih Sparepart --</option>'+sArr().map(v=>`<option value="${v._key}">${v.sku} — ${v.nama} (${v.stok} ${v.sat})</option>`).join('');
   ['i-sku','o-sku'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=so});
@@ -708,9 +796,27 @@ function updSel(){
       cats.map(c=>`<div class="chip${catFilter===c?' on':''}" onclick="setCat('${c}',this)">${cap(c)}</div>`).join('');
   }
 }
+function syncEditKatSelect(cur){
+  const el=document.getElementById('e-sk-kat');
+  if(!el)return;
+  el.innerHTML=allKat.map(k=>`<option value="${k.nama.toLowerCase()}">${k.nama}</option>`).join('');
+  if(cur)el.value=cur;
+}
 function updRiwKar(){
   const rk=document.getElementById('r-kar');
   if(rk)rk.innerHTML='<option value="">Semua Karyawan</option>'+[...new Set(tArr().map(t=>t.karyawan).filter(Boolean))].sort().map(n=>`<option>${n}</option>`).join('');
+}
+function toggleSkuSection(key,btn){
+  skuSectionOpen[key]=!skuSectionOpen[key];
+  if(key==='kat'){
+    const wrap=document.getElementById('sku-kat-wrap');
+    if(wrap)wrap.classList.toggle('is-closed',!skuSectionOpen[key]);
+  }
+  if(key==='sku'){
+    const wrap=document.getElementById('sku-list-wrap');
+    if(wrap)wrap.classList.toggle('is-closed',!skuSectionOpen[key]);
+  }
+  if(btn)btn.textContent=skuSectionOpen[key]?'Tutup':'Buka';
 }
 function updOutInfo(){
   const key=document.getElementById('o-sku').value;
@@ -731,8 +837,18 @@ function renderKatList(){
   el.innerHTML=allKat.map(k=>`
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f4f6f9">
       <span style="font-size:13px;font-weight:600">${k.nama}</span>
-      <button class="del-kat-btn" data-key="${k.key}" data-nama="${k.nama}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;cursor:pointer;padding:4px 10px;font-family:inherit">Hapus</button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="edit-kat-btn" data-key="${k.key}" data-nama="${k.nama}" style="font-size:11px;font-weight:700;color:#3a6358;background:var(--pl);border:1.5px solid #b2dfca;border-radius:6px;cursor:pointer;padding:4px 10px;font-family:inherit">Edit</button>
+        <button class="del-kat-btn" data-key="${k.key}" data-nama="${k.nama}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;cursor:pointer;padding:4px 10px;font-family:inherit">Hapus</button>
+      </div>
     </div>`).join('');
+  document.querySelectorAll('.edit-kat-btn').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const key=this.getAttribute('data-key');
+      const nama=this.getAttribute('data-nama');
+      editKat(key,nama);
+    });
+  });
   document.querySelectorAll('.del-kat-btn').forEach(btn=>{
     btn.addEventListener('click',function(){
       const key=this.getAttribute('data-key');
@@ -742,6 +858,20 @@ function renderKatList(){
       });
     });
   });
+}
+async function editKat(key,namaLama){
+  const baru=(prompt('Ubah nama kategori:',namaLama)||'').trim();
+  if(!baru||baru===namaLama)return;
+  if(allKat.find(k=>k.nama.toLowerCase()===baru.toLowerCase()))return toast('Kategori sudah ada','e');
+  try{
+    await db.ref('kategori/'+key+'/nama').set(baru);
+    const updates={};
+    const oldLow=namaLama.toLowerCase();
+    sArr().forEach(s=>{if((s.kat||'').toLowerCase()===oldLow)updates['sparepart/'+s._key+'/kat']=baru.toLowerCase()});
+    tArr().forEach(t=>{if((t.kat||'').toLowerCase()===oldLow)updates['transaksi/'+t._key+'/kat']=baru.toLowerCase()});
+    if(Object.keys(updates).length)await db.ref().update(updates);
+    toast('Kategori diperbarui');
+  }catch(e){toast('Gagal: '+e.message,'e')}
 }
 async function tambahKat(){
   const nama=document.getElementById('kat-baru').value.trim();
@@ -755,8 +885,8 @@ async function tambahKat(){
 }
 
 
-function filterLow(el){lowFilter=true;catFilter='';document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderStok()}
-function setCat(c,el){catFilter=c;lowFilter=false;document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderStok()}
+function filterLow(el){lowFilter=true;catFilter='';pagerState.stok=1;document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderStok()}
+function setCat(c,el){catFilter=c;lowFilter=false;pagerState.stok=1;document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderStok()}
 
 function renderStok(){
   const q=(document.getElementById('s-q')||{}).value?.toLowerCase()||'';
@@ -765,10 +895,11 @@ function renderStok(){
     return mq&&(!catFilter||v.kat===catFilter)&&(!lowFilter||v.stok<=v.min*1.5);
   });
   f.sort((a,b)=>{const r=v=>v.stok<=v.min?0:v.stok<=v.min*1.5?1:2;return r(a)-r(b)});
+  const pg=getPaged(f,'stok');
   const low=sArr().filter(v=>v.stok<=v.min).length;
   const bn=document.getElementById('bn-dot');if(bn)bn.style.display=low?'block':'none';
   const el=document.getElementById('stok-list');if(!el)return;
-  el.innerHTML=f.length?f.map(d=>{
+  el.innerHTML=pg.count?pg.items.map(d=>{
     const pct=Math.min(100,Math.round((d.stok/Math.max(d.min*3,1))*100));
     const col=scol(d.stok,d.min);const[bc,lb]=sstat(d.stok,d.min);
     return`<div class="stok-row" data-sku="${d.sku}" data-nama="${d.nama.replace(/"/g,'&quot;')}" style="padding:14px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px;cursor:pointer">
@@ -787,7 +918,7 @@ function renderStok(){
       </div>
       <div style="color:var(--mu);font-size:18px;flex-shrink:0">›</div>
     </div>`;
-  }).join(''):lowFilter?emp('Semua stok masih aman'):emp('Tidak ada sparepart');
+  }).join('')+pagerHTML('stok',pg.page,pg.total,pg.count):lowFilter?emp('Semua stok masih aman'):emp('Tidak ada sparepart');
   // Event listener untuk tap card → buka detail
   document.querySelectorAll('.stok-row').forEach(row=>{
     row.addEventListener('click',function(){
@@ -800,6 +931,7 @@ function renderStok(){
 function renderSKU(){
   const el=document.getElementById('sku-list');const cnt=document.getElementById('sku-cnt');if(!el)return;
   const arr=sArr();if(cnt)cnt.textContent=arr.length+' SKU';
+  const pg=getPaged(arr,'sku');
   const isAdmin=currentUser&&currentUser.role==='admin';
   // Hitung total masuk/keluar per SKU (match by SKU OR nama untuk data lama)
   const stat={};
@@ -816,7 +948,7 @@ function renderSKU(){
       keluar:tx.filter(t=>t.tipe==='keluar').reduce((s,t)=>s+t.qty,0)
     };
   });
-  el.innerHTML=arr.length?arr.map(d=>{
+  el.innerHTML=pg.count?pg.items.map(d=>{
     const s=stat[d.sku]||{masuk:0,keluar:0};
     return`<div style="padding:13px 16px;border-bottom:1px solid #f4f6f9">
     <div style="display:flex;align-items:flex-start;gap:12px">
@@ -835,9 +967,16 @@ function renderSKU(){
     </div>
     <div style="display:flex;gap:6px;margin-top:10px;justify-content:flex-end">
       <button class="detail-sku-btn" data-sku="${d.sku}" data-nama="${d.nama.replace(/"/g,'&quot;')}" style="font-size:11px;font-weight:700;color:var(--p2);background:var(--pl);border:1.5px solid #b2dfca;border-radius:6px;cursor:pointer;padding:5px 12px;font-family:inherit">Detail</button>
-      ${isAdmin?`<button class="del-sku-btn" data-key="${d._key}" data-nama="${d.nama.replace(/"/g,'&quot;')}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;cursor:pointer;padding:5px 12px;font-family:inherit">Hapus</button>`:''}
+      ${isAdmin?`<button class="edit-sku-btn" data-key="${d._key}" style="font-size:11px;font-weight:700;color:#3a6358;background:var(--pl);border:1.5px solid #b2dfca;border-radius:6px;cursor:pointer;padding:5px 12px;font-family:inherit">Edit</button>
+      <button class="del-sku-btn" data-key="${d._key}" data-nama="${d.nama.replace(/"/g,'&quot;')}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;cursor:pointer;padding:5px 12px;font-family:inherit">Hapus</button>`:''}
     </div>
-  </div>`;}).join(''):emp('Belum ada SKU');
+  </div>`;}).join('')+pagerHTML('sku',pg.page,pg.total,pg.count):emp('Belum ada SKU');
+  document.querySelectorAll('.edit-sku-btn').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const key=this.getAttribute('data-key');
+      openEditSKU(key);
+    });
+  });
   // Event listener tombol hapus
   document.querySelectorAll('.del-sku-btn').forEach(btn=>{
     btn.addEventListener('click',function(){
@@ -856,6 +995,51 @@ function renderSKU(){
       showDetailSKU(sku,nama);
     });
   });
+}
+function openEditSKU(key){
+  const d=allS[key];
+  if(!d)return toast('SKU tidak ditemukan','e');
+  editSkuKey=key;
+  document.getElementById('e-sk-kode').value=d.sku||'';
+  document.getElementById('e-sk-nama').value=d.nama||'';
+  document.getElementById('e-sk-sat').value=d.sat||'pcs';
+  document.getElementById('e-sk-stok').value=d.stok||0;
+  document.getElementById('e-sk-min').value=d.min||0;
+  syncEditKatSelect(d.kat||'');
+  openM('m-sku-edit');
+}
+async function saveEditSKU(){
+  if(!editSkuKey)return;
+  const old=allS[editSkuKey];
+  if(!old)return toast('SKU tidak ditemukan','e');
+  const sku=document.getElementById('e-sk-kode').value.trim().toUpperCase();
+  const nama=document.getElementById('e-sk-nama').value.trim();
+  const kat=document.getElementById('e-sk-kat').value;
+  const sat=document.getElementById('e-sk-sat').value.trim()||'pcs';
+  const stok=parseInt(document.getElementById('e-sk-stok').value,10);
+  const min=parseInt(document.getElementById('e-sk-min').value,10);
+  if(!sku||!nama)return toast('Kode & nama wajib diisi','e');
+  if(sArr().find(v=>v._key!==editSkuKey&&v.sku===sku))return toast('Kode SKU sudah ada','e');
+  if(Number.isNaN(stok)||stok<0)return toast('Stok tidak valid','e');
+  if(Number.isNaN(min)||min<0)return toast('Min. stok tidak valid','e');
+  try{
+    await db.ref('sparepart/'+editSkuKey).update({sku,nama,kat,sat,stok,min});
+    const oldSku=(old.sku||'').toLowerCase();
+    const oldNama=(old.nama||'').toLowerCase();
+    const updates={};
+    tArr().forEach(t=>{
+      const tsku=(t.sku||'').toLowerCase();
+      const tnama=(t.sparepart||'').toLowerCase();
+      if(tsku===oldSku||tnama===oldNama){
+        updates['transaksi/'+t._key+'/sku']=sku;
+        updates['transaksi/'+t._key+'/sparepart']=nama;
+        updates['transaksi/'+t._key+'/kat']=kat;
+      }
+    });
+    if(Object.keys(updates).length)await db.ref().update(updates);
+    closeM('m-sku-edit');
+    toast('SKU diperbarui');
+  }catch(e){toast('Gagal: '+e.message,'e')}
 }
 
 // ══ MODAL DETAIL SKU ══
@@ -900,19 +1084,20 @@ function showDetailSKU(sku,nama){
 }
 
 // ══ RENDER TRANSAKSI ══
-function onPickDate(val){trxDateFilter=val;document.getElementById('trx-clear-btn').style.display=val?'inline-flex':'none';renderTrx()}
-function clearDate(){trxDateFilter='';document.getElementById('trx-date-pick').value='';document.getElementById('trx-clear-btn').style.display='none';renderTrx()}
+function onPickDate(val){trxDateFilter=val;pagerState.trx=1;document.getElementById('trx-clear-btn').style.display=val?'inline-flex':'none';renderTrx()}
+function clearDate(){trxDateFilter='';pagerState.trx=1;document.getElementById('trx-date-pick').value='';document.getElementById('trx-clear-btn').style.display='none';renderTrx()}
 function filterByDate(t){return !trxDateFilter||t.tanggal===trxDateFilter}
 
 function renderTrx(){
   const el=document.getElementById('trx-list');const cnt=document.getElementById('trx-cnt');if(!el)return;
   const f=tArr().filter(t=>filterByDate(t));
+  const pg=getPaged(f,'trx');
   if(cnt)cnt.textContent=f.length+' transaksi';
   const isAdmin=currentUser&&currentUser.role==='admin';
   const aBtn=document.getElementById('approve-all-btn');
   if(aBtn)aBtn.style.display=isAdmin&&f.filter(t=>!t.approved).length>0?'inline-flex':'none';
-  if(!f.length){el.innerHTML=emp('Belum ada transaksi');return}
-  el.innerHTML=f.map(t=>{
+  if(!pg.count){el.innerHTML=emp('Belum ada transaksi');return}
+  el.innerHTML=pg.items.map(t=>{
     const isApproved=!!t.approved;
     return`<div style="padding:14px 16px;border-bottom:1px solid #f4f6f9">
       <div style="display:flex;align-items:flex-start;gap:10px">
@@ -935,14 +1120,15 @@ function renderTrx(){
         </div>
       </div>
     </div>`;
-  }).join('');
+  }).join('')+pagerHTML('trx',pg.page,pg.total,pg.count);
 }
 
 // ══ RENDER KARYAWAN ══
 function renderKar(){
   const el=document.getElementById('kar-list');const cnt=document.getElementById('kar-cnt');if(!el)return;
   const arr=kArr();if(cnt)cnt.textContent=arr.length+' Karyawan';
-  el.innerHTML=arr.length?arr.map(k=>`<div style="padding:13px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px">
+  const pg=getPaged(arr,'kar');
+  el.innerHTML=pg.count?pg.items.map(k=>`<div style="padding:13px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px">
     <div class="av">${ini(k.nama)}</div>
     <div style="flex:1;min-width:0">
       <div style="font-size:13px;font-weight:700">${k.nama}</div>
@@ -952,7 +1138,7 @@ function renderKar(){
       </div>
     </div>
     <button class="del-kar-btn" data-key="${k._key}" data-nama="${k.nama}" style="font-size:12px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:8px;cursor:pointer;font-family:inherit;flex-shrink:0;padding:6px 12px">Hapus</button>
-  </div>`).join(''):emp('Belum ada akun karyawan. Tap Tambah Akun untuk menambahkan.');
+  </div>`).join('')+pagerHTML('kar',pg.page,pg.total,pg.count):emp('Belum ada akun karyawan. Tap Tambah Akun untuk menambahkan.');
   // Pasang event listener ke semua tombol hapus karyawan
   document.querySelectorAll('.del-kar-btn').forEach(btn=>{
     btn.addEventListener('click',function(){
@@ -975,18 +1161,20 @@ function renderDash(){
   document.getElementById('d-alerts').innerHTML=
     sv.filter(v=>v.stok<=v.min).map(v=>`<div class="alert ad"><strong>${v.nama}</strong> — kritis: ${v.stok} unit (min: ${v.min})</div>`).join('')+
     sv.filter(v=>v.stok>v.min&&v.stok<=v.min*1.5).map(v=>`<div class="alert aw"><strong>${v.nama}</strong> — menipis: ${v.stok} unit (min: ${v.min})</div>`).join('');
-  const rec=tArr().slice(0,5);
-  document.getElementById('d-recent').innerHTML=rec.length?rec.map(t=>`<div class="hi">
+  const rec=tArr();
+  const recPg=getPaged(rec,'dRecent');
+  document.getElementById('d-recent').innerHTML=recPg.count?recPg.items.map(t=>`<div class="hi">
     <div class="hi-dot" style="background:${t.tipe==='masuk'?'#4f7c6e':'#d95f5f'}"></div>
     <div class="hinf"><div class="hn">${t.sparepart}</div><div class="hm">${t.karyawan} &bull; ${t.tanggal} ${t.waktu}</div></div>
     <div class="hq" style="color:${t.tipe==='masuk'?'#3a6358':'#d95f5f'}">${t.tipe==='masuk'?'+':'-'}${t.qty}</div>
-  </div>`).join(''):emp('Belum ada transaksi');
-  const srt=[...sv].sort((a,b)=>a.stok-b.stok).slice(0,5);
+  </div>`).join('')+pagerHTML('dRecent',recPg.page,recPg.total,recPg.count):emp('Belum ada transaksi');
+  const srt=[...sv].sort((a,b)=>a.stok-b.stok);
+  const lowPg=getPaged(srt,'dLow');
   const mx=Math.max(...srt.map(v=>v.stok),1);
-  document.getElementById('d-low2').innerHTML=srt.length?srt.map(v=>`<div class="brow">
+  document.getElementById('d-low2').innerHTML=lowPg.count?lowPg.items.map(v=>`<div class="brow">
     <div class="blab" title="${v.nama}">${v.nama}</div>
     <div class="btrack"><div class="bfill" style="width:${Math.max(8,Math.round((v.stok/mx)*100))}%;background:${scol(v.stok,v.min)}"><span class="bval">${v.stok}</span></div></div>
-  </div>`).join(''):emp('Belum ada data');
+  </div>`).join('')+pagerHTML('dLow',lowPg.page,lowPg.total,lowPg.count):emp('Belum ada data');
 }
 
 // ══ RENDER LAPORAN ══
@@ -1002,13 +1190,17 @@ function renderLap(){
   const cats={};
   sv.forEach(v=>{if(!cats[v.kat])cats[v.kat]={sku:0,masuk:0,keluar:0,stok:0};cats[v.kat].sku++;cats[v.kat].stok+=v.stok});
   ta.forEach(t=>{if(!cats[t.kat])return;if(t.tipe==='masuk')cats[t.kat].masuk+=t.qty;else cats[t.kat].keluar+=t.qty});
-  const kt=el('l-kat');if(kt)kt.innerHTML=Object.entries(cats).map(([k,v])=>`<tr><td><span class="b bg">${cap(k)}</span></td><td>${v.sku}</td><td style="color:#3a6358;font-weight:700">+${v.masuk}</td><td style="color:#d95f5f;font-weight:700">-${v.keluar}</td><td><strong>${v.stok}</strong></td></tr>`).join('')||`<tr><td colspan="5" class="empty">Belum ada data</td></tr>`;
+  const catRows=Object.entries(cats);
+  const catPg=getPaged(catRows,'lKat');
+  const kt=el('l-kat');if(kt)kt.innerHTML=catPg.count?catPg.items.map(([k,v])=>`<tr><td><span class="b bg">${cap(k)}</span></td><td>${v.sku}</td><td style="color:#3a6358;font-weight:700">+${v.masuk}</td><td style="color:#d95f5f;font-weight:700">-${v.keluar}</td><td><strong>${v.stok}</strong></td></tr>`).join('')+`<tr><td colspan="5" style="padding:0">${pagerHTML('lKat',catPg.page,catPg.total,catPg.count)}</td></tr>`:`<tr><td colspan="5" class="empty">Belum ada data</td></tr>`;
   const low=[...sv].filter(v=>v.stok<=v.min*1.5).sort((a,b)=>a.stok-b.stok);
-  const krt=el('l-kritis');if(krt)krt.innerHTML=low.length?low.map(v=>{const[bc,lb]=sstat(v.stok,v.min);return`<tr><td style="font-size:12px">${v.nama}</td><td style="font-weight:800;color:${scol(v.stok,v.min)}">${v.stok}</td><td style="color:var(--mu)">${v.min}</td><td><span class="b ${bc}">${lb}</span></td></tr>`}).join(''):`<tr><td colspan="4" class="empty">Semua stok aman</td></tr>`;
+  const lowPg=getPaged(low,'lKritis');
+  const krt=el('l-kritis');if(krt)krt.innerHTML=lowPg.count?lowPg.items.map(v=>{const[bc,lb]=sstat(v.stok,v.min);return`<tr><td style="font-size:12px">${v.nama}</td><td style="font-weight:800;color:${scol(v.stok,v.min)}">${v.stok}</td><td style="color:var(--mu)">${v.min}</td><td><span class="b ${bc}">${lb}</span></td></tr>`}).join('')+`<tr><td colspan="4" style="padding:0">${pagerHTML('lKritis',lowPg.page,lowPg.total,lowPg.count)}</td></tr>`:`<tr><td colspan="4" class="empty">Semua stok aman</td></tr>`;
   const kst={};ta.forEach(t=>{if(!kst[t.karyawan])kst[t.karyawan]={masuk:0,keluar:0};if(t.tipe==='masuk')kst[t.karyawan].masuk+=t.qty;else kst[t.karyawan].keluar+=t.qty});
   const krt2=el('l-kar');
   const allUsers=[...ka,...(currentUser?[{nama:'Administrator',jabatan:'Admin'}]:[])];
-  if(krt2)krt2.innerHTML=allUsers.length?allUsers.map(k=>{const s=kst[k.nama]||{masuk:0,keluar:0};return`<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="width:26px;height:26px;font-size:10px">${ini(k.nama)}</div>${k.nama}</div></td><td><span class="b ${jcol[k.jabatan]||'bg'}" style="font-size:10px">${k.jabatan}</span></td><td><strong>${s.masuk+s.keluar}</strong></td><td style="color:#3a6358;font-weight:700">+${s.masuk}</td><td style="color:#d95f5f;font-weight:700">-${s.keluar}</td></tr>`}).join(''):`<tr><td colspan="5" class="empty">Belum ada karyawan</td></tr>`;
+  const userPg=getPaged(allUsers,'lKar');
+  if(krt2)krt2.innerHTML=userPg.count?userPg.items.map(k=>{const s=kst[k.nama]||{masuk:0,keluar:0};return`<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="width:26px;height:26px;font-size:10px">${ini(k.nama)}</div>${k.nama}</div></td><td><span class="b ${jcol[k.jabatan]||'bg'}" style="font-size:10px">${k.jabatan}</span></td><td><strong>${s.masuk+s.keluar}</strong></td><td style="color:#3a6358;font-weight:700">+${s.masuk}</td><td style="color:#d95f5f;font-weight:700">-${s.keluar}</td></tr>`}).join('')+`<tr><td colspan="5" style="padding:0">${pagerHTML('lKar',userPg.page,userPg.total,userPg.count)}</td></tr>`:`<tr><td colspan="5" class="empty">Belum ada karyawan</td></tr>`;
 }
 
 // ══ RENDER RIWAYAT ══
@@ -1017,8 +1209,9 @@ function renderRiw(){
   const d1=(document.getElementById('r-d1')||{}).value,d2=(document.getElementById('r-d2')||{}).value;
   const rk=(document.getElementById('r-kar')||{}).value,rt=(document.getElementById('r-tip')||{}).value;
   const f=tArr().filter(t=>(!d1||t.tanggal>=d1)&&(!d2||t.tanggal<=d2)&&(!rk||t.karyawan===rk)&&(!rt||t.tipe===rt));
+  const pg=getPaged(f,'riw');
   if(cnt)cnt.textContent=f.length+' transaksi';
-  el.innerHTML=f.length?f.map(t=>`<div class="trx-item">
+  el.innerHTML=pg.count?pg.items.map(t=>`<div class="trx-item">
     <div class="trx-type" style="background:${t.tipe==='masuk'?'#4f7c6e':'#d95f5f'}"></div>
     <div class="trx-info">
       <div class="trx-nama">${t.sparepart}</div>
@@ -1026,7 +1219,12 @@ function renderRiw(){
       ${t.ket&&t.ket!=='-'?`<div style="font-size:11px;color:var(--mu);margin-top:2px">${t.ket}</div>`:''}
     </div>
     <div class="trx-qty" style="color:${t.tipe==='masuk'?'#3a6358':'#d95f5f'}">${t.tipe==='masuk'?'+':'-'}${t.qty}</div>
-  </div>`).join(''):emp('Tidak ada data');
+  </div>`).join('')+pagerHTML('riw',pg.page,pg.total,pg.count):emp('Tidak ada data');
+}
+
+function applyRiwFilter(){
+  pagerState.riw=1;
+  renderRiw();
 }
 
 function renderAll(){renderStok();renderSKU();renderDash();updSel();updRiwKar()}
