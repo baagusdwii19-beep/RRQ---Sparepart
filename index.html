@@ -1757,6 +1757,16 @@ async function delKar(key,nama){
     try{await db.ref('users/'+key).remove();toast('Akun dihapus')}catch(e){toast('Gagal','e')}
   });
 }
+const ONE_TIME_RESET_KEY='rrq_one_time_reset_20260525_done';
+async function resetSemuaDataSekaliSaatLoad(){
+  if(localStorage.getItem(ONE_TIME_RESET_KEY)==='1')return;
+  const spSnap=await db.ref('sparepart').once('value');
+  const updates={};
+  if(spSnap.val())spSnap.forEach(c=>{updates['sparepart/'+c.key+'/stok']=0});
+  await db.ref('transaksi').remove();
+  if(Object.keys(updates).length)await db.ref().update(updates);
+  localStorage.setItem(ONE_TIME_RESET_KEY,'1');
+}
 
 function exportCSV(){
   const rows=[['Tanggal','Waktu','Karyawan','Tipe','Sparepart','SKU','Qty','Stok Sesudah','Keterangan']];
@@ -1805,10 +1815,13 @@ const FIREBASE_CONFIG = {
   authDomain: "rrq-sparepart.firebaseapp.com"
 };
 
-window.onload=()=>{
+window.onload=async()=>{
   // Init Firebase langsung tanpa setup screen
   if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
   db=firebase.database();
+
+  // Reset satu kali: hapus semua transaksi & nolkan stok (SKU tetap ada)
+  try{await resetSemuaDataSekaliSaatLoad()}catch(e){}
 
   // Buat akun admin default jika belum ada
   db.ref('users/admin').once('value',snap=>{
