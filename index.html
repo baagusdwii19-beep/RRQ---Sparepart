@@ -440,6 +440,7 @@ body.is-admin button.admin-only{display:inline-flex!important}
       </div>
       <div style="height:12px"></div>
       <div class="search-wrap"><input class="si" id="s-q" placeholder="Cari SKU / nama sparepart..." oninput="onStokSearch()"></div>
+      <div class="filter-bar" id="s-chips"></div>
       <div class="card">
         <div class="ch"><span class="ct">Daftar SKU</span>
           <div style="display:flex;gap:8px;align-items:center">
@@ -1186,8 +1187,8 @@ async function tambahKat(){
 }
 
 
-function filterLow(el){lowFilter=true;catFilter='';pagerState.stok=1;document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderStok()}
-function setCat(c,el){catFilter=c;lowFilter=false;pagerState.stok=1;document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderStok()}
+function filterLow(el){lowFilter=true;catFilter='';pagerState.sku=1;document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderSKU()}
+function setCat(c,el){catFilter=c;lowFilter=false;pagerState.sku=1;document.querySelectorAll('#s-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderSKU()}
 
 function renderStok(){
   const q=(document.getElementById('s-q')||{}).value?.toLowerCase()||'';
@@ -1232,8 +1233,10 @@ function renderStok(){
 function renderSKU(){
   const el=document.getElementById('sku-list');const cnt=document.getElementById('sku-cnt');if(!el)return;
   const arr=sArr().filter(d=>{
-    if(!skuListQ)return true;
-    return (d.sku||'').toLowerCase().includes(skuListQ)||(d.nama||'').toLowerCase().includes(skuListQ);
+    const bySearch=!skuListQ||(d.sku||'').toLowerCase().includes(skuListQ)||(d.nama||'').toLowerCase().includes(skuListQ);
+    const byCategory=!catFilter||(d.kat||'').toLowerCase()===catFilter;
+    const byLow=!lowFilter||(parseInt(d.stok,10)||0)<=(parseInt(d.min,10)||0)*1.5;
+    return bySearch&&byCategory&&byLow;
   });
   if(cnt)cnt.textContent=arr.length+' SKU';
   const pg=getPaged(arr,'sku');
