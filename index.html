@@ -462,6 +462,7 @@ body.is-admin button.admin-only{display:inline-flex!important}
       </div>
       <div style="height:12px"></div>
       <div class="search-wrap"><input class="si" id="trx-q" placeholder="Cari sparepart, SKU, karyawan, atau keterangan..." oninput="onTrxSearch()"></div>
+      <div class="filter-bar" id="trx-tabs"></div>
       <div style="display:flex;align-items:center;gap:8px;padding:0 14px;margin-bottom:14px">
         <input type="date" id="trx-date-pick" class="fi" style="flex:1;font-size:14px;padding:10px 12px" onchange="onPickDate(this.value)">
         <button class="btn bo btn-sm" id="trx-clear-btn" onclick="clearDate()" style="display:none;flex-shrink:0">Semua</button>
@@ -742,6 +743,7 @@ let stokSyncQueued=false;
 let inputSkuSelect2Ready=false;
 let outputSkuSelect2Ready=false;
 let trxSearchQ='';
+let trxTab='pending';
 let riwSearchQ='';
 let dashTrxSearchQ='';
 let skuListQ='';
@@ -849,10 +851,11 @@ function listen(){
   });
 }
 
-function calcStokByTransaksi(sp){
+function calcStokByTransaksi(sp,approvedOnly=false){
   const skuLow=(sp.sku||'').toLowerCase();
   const namaLow=(sp.nama||'').toLowerCase();
-  return tArr().reduce((sum,t)=>{
+  const src=approvedOnly?tArrAll().filter(t=>!t.deleted&&t.approved):tArr();
+  return src.reduce((sum,t)=>{
     const tsku=(t.sku||'').toLowerCase();
     const tnama=(t.sparepart||'').toLowerCase();
     if(tsku!==skuLow&&tnama!==namaLow)return sum;
@@ -860,11 +863,23 @@ function calcStokByTransaksi(sp){
     return t.tipe==='masuk'?sum+q:sum-q;
   },0);
 }
+function findSparepartByTransaksi(t){
+  const skuLow=(t.sku||'').toLowerCase();
+  const namaLow=(t.sparepart||'').toLowerCase();
+  return sArr().find(sp=>{
+    const ssku=(sp.sku||'').toLowerCase();
+    const snama=(sp.nama||'').toLowerCase();
+    return ssku===skuLow||snama===namaLow;
+  })||null;
+}
+function calcApprovedStokForSp(sp){
+  return calcStokByTransaksi(sp,true);
+}
 
 async function syncStokDariTransaksi(){
   const updates={};
   sArr().forEach(sp=>{
-    const stokTx=calcStokByTransaksi(sp);
+    const stokTx=calcStokByTransaksi(sp,true);
     const stokNow=parseInt(sp.stok,10)||0;
     if(stokNow!==stokTx)updates['sparepart/'+sp._key+'/stok']=stokTx;
   });
@@ -915,7 +930,8 @@ const nowDate=()=>new Date().toISOString().slice(0,10);
 const nowTime=()=>new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
 const emp=msg=>`<p class="empty">${msg||'Belum ada data'}</p>`;
 const sArr=()=>Object.values(allS);
-const tArr=()=>Object.values(allT).sort((a,b)=>(b.ts||0)-(a.ts||0));
+const tArrAll=()=>Object.values(allT).sort((a,b)=>(b.ts||0)-(a.ts||0));
+const tArr=()=>tArrAll().filter(t=>!t.deleted);
 const kArr=()=>Object.values(allK);
 
 function getPaged(arr,key){
@@ -974,6 +990,25 @@ function onTrxSearch(){
   trxSearchQ=(document.getElementById('trx-q')||{}).value?.toLowerCase()||'';
   pagerState.trx=1;
   renderTrx();
+}
+function setTrxTab(tab,el){
+  trxTab=tab;
+  pagerState.trx=1;
+  document.querySelectorAll('#trx-tabs .chip').forEach(x=>x.classList.remove('on'));
+  if(el)el.classList.add('on');
+  renderTrx();
+}
+function renderTrxTabs(){
+  const el=document.getElementById('trx-tabs');
+  if(!el)return;
+  const raw=tArrAll();
+  const pending=raw.filter(t=>!t.deleted&&!t.approved).length;
+  const approved=raw.filter(t=>!t.deleted&&t.approved).length;
+  const deleted=raw.filter(t=>t.deleted).length;
+  el.innerHTML=
+    `<div class="chip${trxTab==='pending'?' on':''}" onclick="setTrxTab('pending',this)">Belum Approve (${pending})</div>`+
+    `<div class="chip${trxTab==='approved'?' on':''}" onclick="setTrxTab('approved',this)">Sudah Approve (${approved})</div>`+
+    `<div class="chip${trxTab==='deleted'?' on':''}" onclick="setTrxTab('deleted',this)">Dihapus (${deleted})</div>`;
 }
 function onRiwSearch(){
   riwSearchQ=(document.getElementById('riw-q')||{}).value?.toLowerCase()||'';
@@ -1368,20 +1403,23 @@ function filterByDate(t){return !trxDateFilter||t.tanggal===trxDateFilter}
 
 function renderTrx(){
   const el=document.getElementById('trx-list');const cnt=document.getElementById('trx-cnt');if(!el)return;
-  const f=tArr().filter(t=>{
+  renderTrxTabs();
+  const base=trxTab==='deleted'?tArrAll().filter(t=>t.deleted):tArr().filter(t=>trxTab==='approved'?!!t.approved:!t.approved);
+  const f=base.filter(t=>{
     if(!filterByDate(t))return false;
     if(!trxSearchQ)return true;
-    const src=[t.sparepart,t.sku,t.karyawan,t.ket,t.tipe,t.tanggal,t.waktu].join(' ').toLowerCase();
+    const src=[t.sparepart,t.sku,t.karyawan,t.ket,t.tipe,t.tanggal,t.waktu,t.deletedBy,t.deletedAt].join(' ').toLowerCase();
     return src.includes(trxSearchQ);
   });
   const pg=getPaged(f,'trx');
   if(cnt)cnt.textContent=f.length+' transaksi';
   const isAdmin=currentUser&&currentUser.role==='admin';
   const aBtn=document.getElementById('approve-all-btn');
-  if(aBtn)aBtn.style.display=isAdmin&&f.filter(t=>!t.approved).length>0?'inline-flex':'none';
-  if(!pg.count){el.innerHTML=emp('Belum ada transaksi');return}
+  if(aBtn)aBtn.style.display=isAdmin&&trxTab!=='deleted'&&f.filter(t=>!t.approved).length>0?'inline-flex':'none';
+  if(!pg.count){el.innerHTML=emp(trxTab==='deleted'?'Belum ada transaksi dihapus':'Belum ada transaksi');return}
   el.innerHTML=pg.items.map(t=>{
     const isApproved=!!t.approved;
+    const isDeleted=!!t.deleted;
     return`<div style="padding:14px 16px;border-bottom:1px solid #f4f6f9">
       <div style="display:flex;align-items:flex-start;gap:10px">
         <div style="width:8px;height:8px;border-radius:50%;background:${t.tipe==='masuk'?'#4f7c6e':'#d95f5f'};flex-shrink:0;margin-top:5px"></div>
@@ -1390,12 +1428,21 @@ function renderTrx(){
           <div style="font-size:11px;color:var(--mu);margin-top:2px">${t.karyawan} &bull; ${t.tanggal} ${t.waktu}</div>
           ${t.ket&&t.ket!=='-'?`<div style="font-size:11px;color:var(--mu);margin-top:1px">${t.ket}</div>`:''}
           <div style="margin-top:8px">
-            ${isApproved
+            ${isDeleted
+              ?`<span style="font-size:11px;font-weight:700;color:#9b2c2c">🗑 Dihapus ${t.deletedAt||''}${t.deletedBy?' oleh '+t.deletedBy:''}</span>`
+              :isApproved
               ?`<span style="font-size:11px;font-weight:700;color:#267a4a">✓ Approved ${t.approvedAt}</span>
                 ${isAdmin?`<button onclick="approveItem('${t._key}',false)" style="font-size:11px;color:var(--mu);background:none;border:none;cursor:pointer;padding:0 0 0 8px;font-family:inherit;text-decoration:underline">Batalkan</button>`:''}` 
-              :`${isAdmin?`<button onclick="approveItem('${t._key}',true)" style="padding:5px 14px;border-radius:20px;border:1.5px solid #4f7c6e;background:#e8f3f0;color:#3a6358;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Approve</button>`:'<span style="font-size:11px;color:var(--mu)">Menunggu approval</span>'}`
+              :`${isAdmin
+                ?`<button onclick="approveItem('${t._key}',true)" style="padding:5px 14px;border-radius:20px;border:1.5px solid #4f7c6e;background:#e8f3f0;color:#3a6358;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Approve</button>
+                  <span style="font-size:11px;color:${t.approveIssue?'#9b2c2c':'var(--mu)'};font-weight:${t.approveIssue?'700':'500'};margin-left:8px">${t.approveIssue?('⚠ '+t.approveIssue):'Menunggu approval'}</span>`
+                :`<span style="font-size:11px;color:${t.approveIssue?'#9b2c2c':'var(--mu)'};font-weight:${t.approveIssue?'700':'500'}">${t.approveIssue?('⚠ '+t.approveIssue):'Menunggu approval'}</span>`}`
             }
           </div>
+          ${(!isDeleted&&!isApproved)?`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+            <button onclick="editTrx('${t._key}')" style="padding:5px 14px;border-radius:20px;border:1.5px solid #4f7c6e;background:#e8f3f0;color:#3a6358;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Edit</button>
+            <button onclick="delTrx('${t._key}')" style="padding:5px 14px;border-radius:20px;border:1.5px solid #d95f5f;background:#fdf0f0;color:#b83c3c;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Hapus</button>
+          </div>`:''}
         </div>
         <div style="flex-shrink:0;text-align:right">
           <div style="font-size:16px;font-weight:900;color:${t.tipe==='masuk'?'#3a6358':'#d95f5f'}">${t.tipe==='masuk'?'+':'-'}${t.qty}</div>
@@ -1529,11 +1576,11 @@ async function doInput(){
   const ket=document.getElementById('i-ket').value||'-';
   if(!key)return toast('Pilih sparepart dulu','e');
   if(qty<1)return toast('Jumlah harus > 0','e');
-  const sp=allS[key];const newStok=sp.stok+qty;
+  const sp=allS[key];
+  const projected=(parseInt(sp.stok,10)||0)+qty;
   try{
-    await db.ref('sparepart/'+key+'/stok').set(newStok);
-    await db.ref('transaksi').push({ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,sparepart:sp.nama,sku:sp.sku,kat:sp.kat,tipe:'masuk',qty,stokSesudah:newStok,ket});
-    toast('Stok +'+qty+' disimpan');closeM('m-in');
+    await db.ref('transaksi').push({ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,sparepart:sp.nama,sku:sp.sku,kat:sp.kat,tipe:'masuk',qty,stokSesudah:projected,ket,approved:false});
+    toast('Transaksi masuk disimpan, menunggu approval');closeM('m-in');
     document.getElementById('i-qty').value='';document.getElementById('i-ket').value='';
   }catch(e){toast('Gagal: '+e.message,'e')}
 }
@@ -1547,11 +1594,10 @@ async function doOutput(){
   const sp=allS[key];
   if(!sp||sp.stok<=0)return toast('Stok 0. Tidak bisa melakukan potong stok','e');
   if(sp.stok<qty)return toast('Stok tidak cukup! Tersisa: '+sp.stok,'e');
-  const newStok=sp.stok-qty;
+  const projected=(parseInt(sp.stok,10)||0)-qty;
   try{
-    await db.ref('sparepart/'+key+'/stok').set(newStok);
-    await db.ref('transaksi').push({ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,sparepart:sp.nama,sku:sp.sku,kat:sp.kat,tipe:'keluar',qty,stokSesudah:newStok,ket});
-    toast('Stok -'+qty+' dipotong');closeM('m-out');
+    await db.ref('transaksi').push({ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,sparepart:sp.nama,sku:sp.sku,kat:sp.kat,tipe:'keluar',qty,stokSesudah:projected,ket,approved:false});
+    toast('Transaksi keluar disimpan, menunggu approval');closeM('m-out');
     document.getElementById('o-qty').value='';document.getElementById('o-ket').value='';
   }catch(e){toast('Gagal: '+e.message,'e')}
 }
@@ -1600,18 +1646,99 @@ async function doKar(){
 
 async function approveItem(key,approve){
   try{
-    await db.ref('transaksi/'+key).update({approved:approve,approvedAt:approve?nowDate()+' '+nowTime():''});
+    const t=allT[key];
+    if(!t||t.deleted)return toast('Transaksi sudah dihapus','e');
+    const sp=findSparepartByTransaksi(t);
+    if(!sp){
+      await db.ref('transaksi/'+key).update({approveIssue:'SKU transaksi tidak ditemukan'});
+      return toast('SKU transaksi tidak ditemukan','e');
+    }
+    const qty=parseInt(t.qty,10)||0;
+    if(qty<1){
+      await db.ref('transaksi/'+key).update({approveIssue:'Qty transaksi tidak valid'});
+      return toast('Qty transaksi tidak valid','e');
+    }
+    const current=calcApprovedStokForSp(sp);
+    const effect=t.tipe==='masuk'?qty:-qty;
+    const next=approve?(current+effect):(current-effect);
+    if(next<0){
+      await db.ref('transaksi/'+key).update({approveIssue:'Stok tidak cukup untuk approve'});
+      return toast('Approval gagal: stok tidak cukup untuk transaksi ini','e');
+    }
+    const payload={approved:approve,approvedAt:approve?nowDate()+' '+nowTime():''};
+    if(approve)payload.stokSesudah=next;
+    payload.approveIssue='';
+    await db.ref('transaksi/'+key).update(payload);
   }catch(e){toast('Gagal','e')}
 }
 async function approveAll(){
   const at=nowDate()+' '+nowTime();
+  const pending=tArrAll()
+    .filter(t=>!t.deleted&&!t.approved&&filterByDate(t))
+    .sort((a,b)=>(a.ts||0)-(b.ts||0));
+  if(!pending.length)return;
+  const stokMap={};
+  sArr().forEach(sp=>{stokMap[sp._key]=calcApprovedStokForSp(sp)});
   const updates={};
-  tArr().filter(t=>filterByDate(t)&&!t.approved).forEach(t=>{
+  let ok=0,skip=0;
+  pending.forEach(t=>{
+    const sp=findSparepartByTransaksi(t);
+    if(!sp){
+      updates['transaksi/'+t._key+'/approveIssue']='SKU transaksi tidak ditemukan';
+      skip++;
+      return;
+    }
+    const qty=parseInt(t.qty,10)||0;
+    if(qty<1){
+      updates['transaksi/'+t._key+'/approveIssue']='Qty transaksi tidak valid';
+      skip++;
+      return;
+    }
+    const cur=stokMap[sp._key]||0;
+    const next=t.tipe==='masuk'?(cur+qty):(cur-qty);
+    if(next<0){
+      updates['transaksi/'+t._key+'/approveIssue']='Stok tidak cukup untuk approve';
+      skip++;
+      return;
+    }
+    stokMap[sp._key]=next;
     updates['transaksi/'+t._key+'/approved']=true;
     updates['transaksi/'+t._key+'/approvedAt']=at;
+    updates['transaksi/'+t._key+'/stokSesudah']=next;
+    updates['transaksi/'+t._key+'/approveIssue']='';
+    ok++;
   });
-  if(!Object.keys(updates).length)return;
-  try{await db.ref().update(updates);toast('Semua di-approve')}catch(e){toast('Gagal','e')}
+  if(!Object.keys(updates).length)return toast('Tidak ada transaksi yang bisa di-approve','e');
+  try{
+    await db.ref().update(updates);
+    toast(skip?('Approve '+ok+' transaksi, '+skip+' ditolak karena stok tidak cukup/invalid'):('Semua di-approve ('+ok+')'));
+  }catch(e){toast('Gagal','e')}
+}
+
+async function editTrx(key){
+  const t=allT[key];
+  if(!t||t.deleted)return toast('Transaksi tidak ditemukan','e');
+  const qtyText=prompt('Ubah jumlah transaksi:',t.qty);
+  if(qtyText===null)return;
+  const qty=parseInt(qtyText,10);
+  if(Number.isNaN(qty)||qty<1)return toast('Jumlah harus > 0','e');
+  const ketText=prompt('Ubah keterangan:',t.ket||'-');
+  if(ketText===null)return;
+  const ket=(ketText||'').trim()||'-';
+  try{
+    await db.ref('transaksi/'+key).update({qty,ket,editedAt:nowDate()+' '+nowTime(),editedBy:currentUser.nama,approveIssue:''});
+    toast('Transaksi diperbarui');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+async function delTrx(key){
+  const t=allT[key];
+  if(!t||t.deleted)return toast('Transaksi sudah dihapus','e');
+  showConfirm('Hapus transaksi ini?','Transaksi akan dipindah ke tab Dihapus.',async()=>{
+    try{
+      await db.ref('transaksi/'+key).update({deleted:true,deletedAt:nowDate()+' '+nowTime(),deletedBy:currentUser.nama});
+      toast('Transaksi dipindah ke Dihapus');
+    }catch(e){toast('Gagal: '+e.message,'e')}
+  });
 }
 
 function showConfirm(title,msg,onOk){
