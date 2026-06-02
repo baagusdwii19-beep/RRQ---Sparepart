@@ -858,11 +858,13 @@ function setTrxTab(tab,el){
 }
 function renderTrxTabs(){
   const el=document.getElementById('trx-tabs');if(!el)return;
-  const pending=tArr().filter(t=>!t.approved).length;
-  const approved=tArr().filter(t=>t.approved).length;
+  const pending=tArrAll().filter(t=>!t.deleted&&!t.approved).length;
+  const approved=tArrAll().filter(t=>!t.deleted&&t.approved).length;
+  const deleted=tArrAll().filter(t=>t.deleted).length;
   el.innerHTML=
     `<div class="chip${trxTab==='pending'?' on':''}" onclick="setTrxTab('pending',this)">Belum Approve (${pending})</div>`+
-    `<div class="chip${trxTab==='approved'?' on':''}" onclick="setTrxTab('approved',this)">Sudah Approve (${approved})</div>`;
+    `<div class="chip${trxTab==='approved'?' on':''}" onclick="setTrxTab('approved',this)">Sudah Approve (${approved})</div>`+
+    `<div class="chip${trxTab==='deleted'?' on':''}" onclick="setTrxTab('deleted',this)">Dihapus (${deleted})</div>`;
   requestAnimationFrame(()=>updateChipArrows('trx-tabs'));
 }
 
@@ -1015,7 +1017,11 @@ function clearDate(){trxDateFilter='';pagerState.trx=1;document.getElementById('
 function renderTrx(){
   const el=document.getElementById('trx-list');const cnt=document.getElementById('trx-cnt');if(!el)return;
   renderTrxTabs();
-  const base=tArr().filter(t=>trxTab==='approved'?!!t.approved:!t.approved);
+  // Pilih base berdasarkan tab
+  let base;
+  if(trxTab==='deleted')base=tArrAll().filter(t=>t.deleted);
+  else if(trxTab==='approved')base=tArr().filter(t=>t.approved);
+  else base=tArr().filter(t=>!t.approved);
   const f=base.filter(t=>{
     if(trxDateFilter&&t.tanggal!==trxDateFilter)return false;
     if(!trxSearchQ)return true;
@@ -1026,26 +1032,149 @@ function renderTrx(){
   if(cnt)cnt.textContent=f.length+' transaksi';
   const isAdmin=currentUser&&currentUser.role==='admin';
   const aBtn=document.getElementById('approve-all-btn');
-  if(aBtn)aBtn.style.display=isAdmin&&f.filter(t=>!t.approved).length>0?'inline-flex':'none';
-  if(!pg.count){el.innerHTML=emp('Belum ada transaksi');return}
-  el.innerHTML=pg.items.map(t=>`<div style="padding:14px 16px;border-bottom:1px solid #f4f6f9">
+  if(aBtn)aBtn.style.display=isAdmin&&trxTab==='pending'&&f.length>0?'inline-flex':'none';
+  if(!pg.count){el.innerHTML=emp(trxTab==='deleted'?'Belum ada transaksi yang dihapus':'Belum ada transaksi');return}
+  el.innerHTML=pg.items.map(t=>{
+    const isDeleted=!!t.deleted;
+    const isApproved=!!t.approved;
+    return`<div style="padding:14px 16px;border-bottom:1px solid #f4f6f9">
     <div style="display:flex;gap:10px">
       <div style="width:8px;height:8px;border-radius:50%;background:${t.tipe==='masuk'?'#4f7c6e':'#d95f5f'};margin-top:5px;flex-shrink:0"></div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.sparepart}</div>
         <div style="font-size:11px;color:var(--mu);margin-top:2px">${t.karyawan} &bull; ${t.tanggal} ${t.waktu}</div>
         ${t.ket&&t.ket!=='-'?`<div style="font-size:11px;color:var(--mu)">${t.ket}</div>`:''}
-        <div style="margin-top:8px">
-          ${t.approved
-            ?`<span style="font-size:11px;font-weight:700;color:#267a4a">✓ Approved ${t.approvedAt||''}</span>`
-            :(isAdmin?`<button onclick="approveItem('${t._key}')" style="padding:5px 14px;border-radius:20px;border:1.5px solid #4f7c6e;background:#e8f3f0;color:#3a6358;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Approve</button>`:'<span style="font-size:11px;color:var(--mu)">Menunggu approval</span>')}
+        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          ${isDeleted
+            ?`<span style="font-size:11px;font-weight:700;color:#9b2c2c">🗑 Dihapus ${t.deletedAt||''}${t.deletedBy?' oleh '+t.deletedBy:''}</span>
+              ${isAdmin?`<button class="restore-trx-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #4f7c6e;background:var(--pl);color:var(--p2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Pulihkan</button>
+              <button class="hard-del-trx-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #d95f5f;background:var(--rl);color:#b83c3c;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Hapus Permanen</button>`:''}`
+            :isApproved
+              ?`<span style="font-size:11px;font-weight:700;color:#267a4a">✓ Approved ${t.approvedAt||''}</span>
+                ${isAdmin?`<button class="unapprove-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid var(--bd);background:#fff;color:var(--mu);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Batal Approve</button>
+                <button class="edit-trx-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #b5d0ed;background:var(--bl);color:#2d5f99;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Edit</button>
+                <button class="del-trx-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #f0a0a0;background:var(--rl);color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Hapus</button>`:''}`
+              :`${isAdmin?`<button class="approve-trx-btn" data-key="${t._key}" style="padding:5px 14px;border-radius:6px;border:1.5px solid #4f7c6e;background:#e8f3f0;color:#3a6358;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Approve</button>
+                <button class="edit-trx-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #b5d0ed;background:var(--bl);color:#2d5f99;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Edit</button>
+                <button class="del-trx-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #f0a0a0;background:var(--rl);color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Hapus</button>`:'<span style="font-size:11px;color:var(--mu)">Menunggu approval</span>'}`
+          }
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:16px;font-weight:900;color:${t.tipe==='masuk'?'#3a6358':'#d95f5f'}">${t.tipe==='masuk'?'+':'-'}${t.qty}</div>
       </div>
     </div>
-  </div>`).join('')+pagerHTML('trx',pg.page,pg.total,pg.count);
+  </div>`;
+  }).join('')+pagerHTML('trx',pg.page,pg.total,pg.count);
+  attachTrxButtons();
+}
+
+function attachTrxButtons(){
+  document.querySelectorAll('.approve-trx-btn').forEach(btn=>{
+    btn.onclick=function(){approveItem(this.getAttribute('data-key'))};
+  });
+  document.querySelectorAll('.unapprove-btn').forEach(btn=>{
+    btn.onclick=function(){unapproveItem(this.getAttribute('data-key'))};
+  });
+  document.querySelectorAll('.edit-trx-btn').forEach(btn=>{
+    btn.onclick=function(){editTrx(this.getAttribute('data-key'))};
+  });
+  document.querySelectorAll('.del-trx-btn').forEach(btn=>{
+    btn.onclick=function(){delTrx(this.getAttribute('data-key'))};
+  });
+  document.querySelectorAll('.restore-trx-btn').forEach(btn=>{
+    btn.onclick=function(){restoreTrx(this.getAttribute('data-key'))};
+  });
+  document.querySelectorAll('.hard-del-trx-btn').forEach(btn=>{
+    btn.onclick=function(){hardDelTrx(this.getAttribute('data-key'))};
+  });
+}
+
+async function unapproveItem(key){
+  try{
+    const t=allT[key];if(!t)return;
+    showConfirm('Batalkan approval?','Stok akan dikembalikan, transaksi jadi pending lagi.',async()=>{
+      // Kembalikan stok
+      const sp=sArr().find(s=>(s.sku||'').toLowerCase()===(t.sku||'').toLowerCase()||(s.nama||'').toLowerCase()===(t.sparepart||'').toLowerCase());
+      if(sp){
+        const cur=sp.stok||0;
+        const newStok=t.tipe==='masuk'?(cur-t.qty):(cur+t.qty);
+        await db.ref('sparepart/'+sp._key+'/stok').set(Math.max(0,newStok));
+      }
+      await db.ref('transaksi/'+key).update({approved:false,approvedAt:''});
+      toast('Approval dibatalkan');
+    });
+  }catch(e){toast('Gagal','e')}
+}
+
+async function editTrx(key){
+  const t=allT[key];if(!t)return;
+  const qtyStr=prompt('Edit jumlah:',t.qty);
+  if(qtyStr===null)return;
+  const qty=parseInt(qtyStr,10);
+  if(!qty||qty<1)return toast('Jumlah tidak valid','e');
+  const ket=prompt('Edit keterangan:',t.ket||'-');
+  if(ket===null)return;
+  try{
+    if(t.approved){
+      // Sesuaikan stok dengan selisih
+      const diff=qty-t.qty;
+      const sp=sArr().find(s=>(s.sku||'').toLowerCase()===(t.sku||'').toLowerCase()||(s.nama||'').toLowerCase()===(t.sparepart||'').toLowerCase());
+      if(sp&&diff!==0){
+        const cur=sp.stok||0;
+        const newStok=t.tipe==='masuk'?(cur+diff):(cur-diff);
+        await db.ref('sparepart/'+sp._key+'/stok').set(Math.max(0,newStok));
+      }
+    }
+    await db.ref('transaksi/'+key).update({qty,ket:ket||'-'});
+    toast('Transaksi diperbarui');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+async function delTrx(key){
+  const t=allT[key];if(!t)return;
+  showConfirm('Hapus transaksi?','Akan dipindahkan ke tab Dihapus. Stok akan dikembalikan kalau sudah approved.',async()=>{
+    try{
+      // Kalau approved, kembalikan stok dulu
+      if(t.approved){
+        const sp=sArr().find(s=>(s.sku||'').toLowerCase()===(t.sku||'').toLowerCase()||(s.nama||'').toLowerCase()===(t.sparepart||'').toLowerCase());
+        if(sp){
+          const cur=sp.stok||0;
+          const newStok=t.tipe==='masuk'?(cur-t.qty):(cur+t.qty);
+          await db.ref('sparepart/'+sp._key+'/stok').set(Math.max(0,newStok));
+        }
+      }
+      await db.ref('transaksi/'+key).update({
+        deleted:true,
+        deletedAt:nowDate()+' '+nowTime(),
+        deletedBy:currentUser.nama,
+        approved:false
+      });
+      toast('Transaksi dipindah ke Dihapus');
+    }catch(e){toast('Gagal: '+e.message,'e')}
+  });
+}
+
+async function restoreTrx(key){
+  try{
+    showConfirm('Pulihkan transaksi?','Transaksi akan kembali ke "Belum Approve". Anda perlu approve manual lagi.',async()=>{
+      await db.ref('transaksi/'+key).update({
+        deleted:null,
+        deletedAt:null,
+        deletedBy:null
+      });
+      toast('Transaksi dipulihkan');
+    });
+  }catch(e){toast('Gagal','e')}
+}
+
+async function hardDelTrx(key){
+  showConfirm('Hapus PERMANEN?','Data transaksi akan hilang selamanya dan tidak bisa dipulihkan.',async()=>{
+    try{
+      await db.ref('transaksi/'+key).remove();
+      toast('Transaksi dihapus permanen');
+    }catch(e){toast('Gagal','e')}
+  });
 }
 
 // ══ RENDER KARYAWAN (with Edit button) ══
