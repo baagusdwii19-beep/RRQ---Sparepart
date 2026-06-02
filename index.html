@@ -6,6 +6,7 @@
 <title>RRQ — Sistem Sparepart</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#f2f5f9;color:#1e2533;min-height:100vh}
@@ -246,6 +247,7 @@ body.is-admin button.admin-only{display:inline-flex!important}
     <div class="sd-item admin-only" onclick="go('karyawan',this)" style="display:none"><span class="sd-icon">👥</span><span class="sd-label">Kelola Akun</span></div>
     <div class="sd-item" onclick="go('laporan',this)"><span class="sd-icon">📊</span><span class="sd-label">Laporan</span></div>
     <div class="sd-item" onclick="go('riwayat',this)"><span class="sd-icon">📋</span><span class="sd-label">Riwayat</span></div>
+    <div class="sd-item admin-only" onclick="go('backup',this)" style="display:none"><span class="sd-icon">💾</span><span class="sd-label">Backup Data</span></div>
   </aside>
 
   <div class="main">
@@ -344,8 +346,8 @@ body.is-admin button.admin-only{display:inline-flex!important}
         </div>
         <div id="kat-body" class="collapsible">
           <div style="display:flex;gap:8px;margin-bottom:12px">
-            <input class="fi" id="kat-baru" placeholder="Nama kategori baru..." style="flex:1">
-            <button class="btn bp btn-sm" onclick="tambahKat()">Tambah</button>
+            <input class="fi" id="kat-baru" placeholder="Nama kategori baru..." style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();tambahKat()}">
+            <button type="button" class="btn bp btn-sm" onclick="tambahKat()">Tambah</button>
           </div>
           <div id="kat-list"></div>
         </div>
@@ -383,6 +385,45 @@ body.is-admin button.admin-only{display:inline-flex!important}
         <div class="sc"><div class="sc-label">Total Keluar</div><div class="sc-val" id="l-out" style="color:var(--red)">0</div></div>
         <div class="sc"><div class="sc-label">Stok Total</div><div class="sc-val" id="l-stok">0</div></div>
         <div class="sc"><div class="sc-label">Transaksi</div><div class="sc-val" id="l-trx">0</div></div>
+      </div>
+    </div>
+
+    <!-- BACKUP -->
+    <div class="page" id="page-backup">
+      <div class="section-title">Backup Data</div>
+      <div class="card">
+        <div class="ch"><span class="ct">Auto Backup</span></div>
+        <div class="cb">
+          <div style="font-size:13px;line-height:1.6;color:#4a5568;margin-bottom:14px">
+            Backup otomatis tersimpan di Firebase <strong>setiap kali</strong> ada perubahan data.<br>
+            Backup terakhir: <strong id="last-backup">-</strong>
+          </div>
+          <button class="btn bp btn-full" onclick="doBackupNow()">💾 Backup Sekarang</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Download Backup</span></div>
+        <div class="cb">
+          <div style="font-size:13px;line-height:1.6;color:#4a5568;margin-bottom:14px">
+            Download seluruh data (SKU, transaksi, kategori, akun) sebagai file backup yang bisa disimpan di komputer.
+          </div>
+          <button class="btn bp btn-full" onclick="downloadBackupJSON()">⬇️ Download Backup (.json)</button>
+          <button class="btn bo btn-full" onclick="downloadBackupExcel()">📊 Download Backup (Excel)</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Riwayat Backup</span><button class="collapse-btn" onclick="toggleC('backup-list',this)">Tutup</button></div>
+        <div id="backup-list" class="collapsible"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">⚠️ Restore Data</span></div>
+        <div class="cb">
+          <div style="font-size:13px;line-height:1.6;color:#9b2c2c;margin-bottom:14px;background:#fff0f0;border:1.5px solid #f5c0c0;padding:10px;border-radius:8px">
+            <strong>HATI-HATI:</strong> Restore akan menimpa SEMUA data saat ini dengan data dari backup. Gunakan hanya jika data hilang.
+          </div>
+          <input type="file" id="restore-file" accept=".json" style="display:none" onchange="onRestoreFile(this)">
+          <button class="btn br btn-full" onclick="document.getElementById('restore-file').click()">📤 Restore dari File JSON</button>
+        </div>
       </div>
     </div>
 
@@ -445,6 +486,7 @@ body.is-admin button.admin-only{display:inline-flex!important}
   <button class="btn bo btn-full admin-only" style="justify-content:flex-start" onclick="goMore('karyawan')">👥  Kelola Akun</button>
   <button class="btn bo btn-full" style="justify-content:flex-start" onclick="goMore('laporan')">📊  Laporan</button>
   <button class="btn bo btn-full" style="justify-content:flex-start" onclick="goMore('riwayat')">📋  Riwayat</button>
+  <button class="btn bo btn-full admin-only" style="justify-content:flex-start" onclick="goMore('backup')">💾  Backup Data</button>
 </div></div>
 
 <div class="mo" id="m-in"><div class="md">
@@ -650,6 +692,7 @@ function listen(){
   db.ref('transaksi').orderByChild('ts').on('value',snap=>{
     allT={};if(snap.val())snap.forEach(c=>{allT[c.key]={...c.val(),_key:c.key}});
     renderTrx();renderRiw();renderDash();renderSKU();renderLap();
+    autoBackup();
   });
   db.ref('users').on('value',snap=>{
     allK={};if(snap.val())snap.forEach(c=>{if(c.val().role!=='admin')allK[c.key]={...c.val(),_key:c.key}});
@@ -716,14 +759,21 @@ function renderKatList(){
   });
 }
 async function tambahKat(){
-  const nama=document.getElementById('kat-baru').value.trim();
-  if(!nama)return toast('Nama kategori kosong','e');
-  if(allKat.find(k=>k.nama.toLowerCase()===nama.toLowerCase()))return toast('Sudah ada','e');
+  const input=document.getElementById('kat-baru');
+  if(!input){toast('Field kategori tidak ditemukan','e');return}
+  const nama=(input.value||'').trim();
+  if(!nama){toast('Nama kategori kosong','e');input.focus();return}
+  if(allKat.find(k=>(k.nama||'').toLowerCase()===nama.toLowerCase())){toast('Kategori sudah ada','e');return}
+  if(!db){toast('Database belum terhubung','e');return}
   try{
-    await db.ref('kategori').push({nama});
-    document.getElementById('kat-baru').value='';
-    toast('Kategori ditambahkan');
-  }catch(e){toast('Gagal','e')}
+    await db.ref('kategori').push({nama:nama});
+    input.value='';
+    input.focus();
+    toast('Kategori "'+nama+'" ditambahkan');
+  }catch(e){
+    console.error('tambahKat error:',e);
+    toast('Gagal: '+(e.message||'unknown'),'e');
+  }
 }
 
 function onStokSearch(){pagerState.stok=1;renderStok()}
@@ -1141,12 +1191,213 @@ function showConfirm(title,msg,onOk){
   openM('m-confirm');
 }
 
-function exportCSV(){
-  const rows=[['Tanggal','Waktu','Karyawan','Tipe','Sparepart','SKU','Qty','Keterangan']];
-  tArr().forEach(t=>rows.push([t.tanggal,t.waktu,t.karyawan,t.tipe,t.sparepart,t.sku,t.qty,t.ket]));
-  const csv=rows.map(r=>r.map(c=>`"${c||''}"`).join(',')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
-  a.download='RRQ_'+nowDate()+'.csv';a.click();toast('CSV diexport');
+function exportCSV(){exportExcel()}
+
+function exportExcel(){
+  try{
+    const wb=XLSX.utils.book_new();
+    // Sheet 1: Transaksi
+    const trxRows=[['Tanggal','Waktu','Karyawan','Tipe','Sparepart','SKU','Kategori','Qty','Keterangan','Status','Approved At']];
+    tArr().forEach(t=>trxRows.push([t.tanggal||'',t.waktu||'',t.karyawan||'',t.tipe||'',t.sparepart||'',t.sku||'',t.kat||'',t.qty||0,t.ket||'',t.approved?'Approved':'Pending',t.approvedAt||'']));
+    const ws1=XLSX.utils.aoa_to_sheet(trxRows);
+    ws1['!cols']=[{wch:12},{wch:8},{wch:18},{wch:8},{wch:25},{wch:14},{wch:14},{wch:8},{wch:22},{wch:10},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,ws1,'Transaksi');
+    // Sheet 2: Sparepart
+    const spRows=[['Kode SKU','Nama Sparepart','Kategori','Satuan','Stok','Min Stok','Status']];
+    sArr().forEach(s=>{
+      const[,lb]=sstat(s.stok||0,s.min||0);
+      spRows.push([s.sku||'',s.nama||'',s.kat||'',s.sat||'',s.stok||0,s.min||0,lb]);
+    });
+    const ws2=XLSX.utils.aoa_to_sheet(spRows);
+    ws2['!cols']=[{wch:14},{wch:28},{wch:14},{wch:8},{wch:8},{wch:8},{wch:10}];
+    XLSX.utils.book_append_sheet(wb,ws2,'Sparepart');
+    // Sheet 3: Karyawan
+    const karRows=[['Username','Nama','Jabatan','No. HP','Bergabung']];
+    kArr().forEach(k=>karRows.push([k.username||k._key,k.nama||'',k.jabatan||'',k.hp||'-',k.bergabung||'']));
+    const ws3=XLSX.utils.aoa_to_sheet(karRows);
+    ws3['!cols']=[{wch:14},{wch:22},{wch:12},{wch:16},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,ws3,'Karyawan');
+    XLSX.writeFile(wb,'RRQ_'+nowDate()+'.xlsx');
+    toast('Excel diexport');
+  }catch(e){toast('Gagal export: '+e.message,'e')}
+}
+
+// ══ AUTO BACKUP ══
+let lastAutoBackupTs=0;
+const AUTO_BACKUP_INTERVAL=10*60*1000; // 10 menit
+
+async function autoBackup(){
+  if(!db||!currentUser)return;
+  const now=Date.now();
+  if(now-lastAutoBackupTs<AUTO_BACKUP_INTERVAL)return;
+  lastAutoBackupTs=now;
+  try{
+    const snapshot={
+      ts:now,
+      tanggal:nowDate()+' '+nowTime(),
+      by:currentUser.nama,
+      type:'auto',
+      sparepart:allS,
+      transaksi:allT,
+      kategori:allKat,
+      users:allK
+    };
+    // Simpan ke /backups dengan key timestamp
+    await db.ref('backups/'+now).set(snapshot);
+    // Hapus backup lama (lebih dari 30 backup)
+    const all=await db.ref('backups').once('value');
+    const keys=[];
+    if(all.val())all.forEach(c=>keys.push(c.key));
+    keys.sort();
+    if(keys.length>30){
+      const toDelete=keys.slice(0,keys.length-30);
+      const updates={};
+      toDelete.forEach(k=>updates['backups/'+k]=null);
+      await db.ref().update(updates);
+    }
+    updateLastBackup();
+  }catch(e){console.error('Backup gagal:',e)}
+}
+
+async function doBackupNow(){
+  if(!currentUser)return;
+  try{
+    const now=Date.now();
+    const snapshot={
+      ts:now,
+      tanggal:nowDate()+' '+nowTime(),
+      by:currentUser.nama,
+      type:'manual',
+      sparepart:allS,
+      transaksi:allT,
+      kategori:allKat,
+      users:allK
+    };
+    await db.ref('backups/'+now).set(snapshot);
+    lastAutoBackupTs=now;
+    toast('Backup berhasil disimpan');
+    updateLastBackup();
+    renderBackupList();
+  }catch(e){toast('Gagal backup: '+e.message,'e')}
+}
+
+function updateLastBackup(){
+  const el=document.getElementById('last-backup');
+  if(!el)return;
+  db.ref('backups').orderByKey().limitToLast(1).once('value',snap=>{
+    if(!snap.val())return el.textContent='Belum pernah';
+    snap.forEach(c=>{el.textContent=c.val().tanggal||'-'});
+  });
+}
+
+function renderBackupList(){
+  const el=document.getElementById('backup-list');
+  if(!el)return;
+  db.ref('backups').orderByKey().limitToLast(20).once('value',snap=>{
+    const arr=[];
+    if(snap.val())snap.forEach(c=>arr.push({key:c.key,...c.val()}));
+    arr.reverse();
+    if(!arr.length){el.innerHTML=emp('Belum ada backup');return}
+    el.innerHTML=arr.map(b=>{
+      const tipeBadge=b.type==='manual'?'<span class="b bi" style="font-size:10px">Manual</span>':'<span class="b bg" style="font-size:10px">Otomatis</span>';
+      const spCount=b.sparepart?Object.keys(b.sparepart).length:0;
+      const trxCount=b.transaksi?Object.keys(b.transaksi).length:0;
+      return`<div style="padding:12px 16px;border-bottom:1px solid #f4f6f9">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700">${b.tanggal||'-'}</div>
+            <div style="font-size:11px;color:var(--mu);margin-top:2px">${b.by||'-'} &bull; ${spCount} SKU &bull; ${trxCount} transaksi</div>
+          </div>
+          ${tipeBadge}
+          <button class="restore-bk-btn" data-key="${b.key}" style="font-size:11px;font-weight:700;color:var(--p2);background:var(--pl);border:1.5px solid #b2dfca;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Pulihkan</button>
+        </div>
+      </div>`;
+    }).join('');
+    document.querySelectorAll('.restore-bk-btn').forEach(btn=>{
+      btn.onclick=function(){
+        const key=this.getAttribute('data-key');
+        showConfirm('Pulihkan backup ini?','SEMUA data saat ini akan diganti dengan data dari backup. Tidak dapat dibatalkan.',()=>restoreFromBackup(key));
+      };
+    });
+  });
+}
+
+async function restoreFromBackup(key){
+  try{
+    const snap=await db.ref('backups/'+key).once('value');
+    const data=snap.val();
+    if(!data)return toast('Backup tidak ditemukan','e');
+    // Restore sparepart
+    const spData={};
+    if(data.sparepart)Object.entries(data.sparepart).forEach(([k,v])=>{const{_key,...rest}=v;spData[k]=rest});
+    await db.ref('sparepart').set(spData);
+    // Restore transaksi
+    const trxData={};
+    if(data.transaksi)Object.entries(data.transaksi).forEach(([k,v])=>{const{_key,...rest}=v;trxData[k]=rest});
+    await db.ref('transaksi').set(trxData);
+    // Restore kategori
+    if(data.kategori&&Array.isArray(data.kategori)){
+      const katData={};
+      data.kategori.forEach(k=>{if(k.key)katData[k.key]={nama:k.nama}});
+      await db.ref('kategori').set(katData);
+    }
+    toast('Data berhasil dipulihkan');
+  }catch(e){toast('Gagal restore: '+e.message,'e')}
+}
+
+function downloadBackupJSON(){
+  try{
+    const data={
+      tanggal:nowDate()+' '+nowTime(),
+      by:currentUser?currentUser.nama:'-',
+      sparepart:allS,
+      transaksi:allT,
+      kategori:allKat,
+      users:allK
+    };
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='RRQ_Backup_'+nowDate()+'.json';
+    a.click();
+    toast('Backup didownload');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+function downloadBackupExcel(){exportExcel()}
+
+function onRestoreFile(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.sparepart&&!data.transaksi)return toast('File tidak valid','e');
+      showConfirm('Pulihkan dari file?','SEMUA data saat ini akan diganti. Tidak dapat dibatalkan.',async()=>{
+        try{
+          if(data.sparepart){
+            const spData={};
+            Object.entries(data.sparepart).forEach(([k,v])=>{const{_key,...rest}=v;spData[k]=rest});
+            await db.ref('sparepart').set(spData);
+          }
+          if(data.transaksi){
+            const trxData={};
+            Object.entries(data.transaksi).forEach(([k,v])=>{const{_key,...rest}=v;trxData[k]=rest});
+            await db.ref('transaksi').set(trxData);
+          }
+          if(data.kategori&&Array.isArray(data.kategori)){
+            const katData={};
+            data.kategori.forEach(k=>{if(k.key)katData[k.key]={nama:k.nama}});
+            await db.ref('kategori').set(katData);
+          }
+          toast('Restore berhasil');
+        }catch(err){toast('Gagal restore: '+err.message,'e')}
+      });
+    }catch(err){toast('File JSON tidak valid','e')}
+  };
+  reader.readAsText(file);
+  input.value='';
 }
 
 function openM(id){document.getElementById(id).classList.add('open')}
@@ -1159,7 +1410,6 @@ function go(pg,el){
   document.querySelectorAll('.sd-item').forEach(n=>n.classList.remove('on'));
   document.getElementById('page-'+pg).classList.add('on');
   if(el)el.classList.add('on');
-  // Sync nav state on both bottom-nav and sidebar
   document.querySelectorAll(`.bn,.sd-item`).forEach(n=>{
     const onclick=n.getAttribute('onclick')||'';
     if(onclick.includes("'"+pg+"'"))n.classList.add('on');
@@ -1167,6 +1417,7 @@ function go(pg,el){
   window.scrollTo(0,0);
   if(pg==='stok')setTimeout(()=>updateChipArrows('s-chips'),50);
   if(pg==='transaksi')setTimeout(()=>updateChipArrows('trx-tabs'),50);
+  if(pg==='backup'){updateLastBackup();renderBackupList()}
 }
 function showMore(){openM('m-more')}
 function goMore(pg){closeM('m-more');setTimeout(()=>go(pg),150)}
