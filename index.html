@@ -6,39 +6,42 @@
 <title>RRQ — Sistem Sparepart</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#f2f5f9;color:#1e2533;min-height:100vh}
-:root{--p:#4f7c6e;--p2:#3a6358;--pl:#e8f3f0;--red:#d95f5f;--rl:#fdf0f0;--amber:#d4924a;--al:#fdf5ea;--blue:#4a7ab5;--bl:#edf3fb;--bd:#e4e9f0;--bg:#f2f5f9;--mu:#8492a6;--text:#1e2533;--nav-h:64px}
+:root{--p:#4f7c6e;--p2:#3a6358;--pl:#e8f3f0;--red:#d95f5f;--rl:#fdf0f0;--amber:#d4924a;--al:#fdf5ea;--blue:#4a7ab5;--bl:#edf3fb;--bd:#e4e9f0;--bg:#f2f5f9;--mu:#8492a6;--text:#1e2533;--nav-h:64px;--side-w:220px}
+
+/* AUTH */
 .auth-screen{display:none;position:fixed;inset:0;z-index:999;background:linear-gradient(160deg,#1a2235 0%,#2d4a3e 100%);overflow-y:auto}
 .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 .auth-box{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
 .auth-logo{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-.auth-logo-ico{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,var(--p),var(--p2));display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.auth-logo-ico svg{width:23px;height:23px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.auth-logo-name{font-size:22px;font-weight:900;color:var(--text);letter-spacing:.5px}
+.auth-logo-ico{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,var(--p),var(--p2));display:flex;align-items:center;justify-content:center}
+.auth-logo-ico svg{width:23px;height:23px;stroke:#fff;fill:none;stroke-width:2}
+.auth-logo-name{font-size:22px;font-weight:900;letter-spacing:.5px}
 .auth-logo-sub{font-size:11px;color:var(--mu);margin-top:1px}
-.auth-title{font-size:15px;font-weight:700;color:var(--text);margin:18px 0 4px}
-.auth-desc{font-size:12px;color:var(--mu);margin-bottom:18px;line-height:1.5}
+.auth-title{font-size:15px;font-weight:700;margin:18px 0 4px}
+.auth-desc{font-size:12px;color:var(--mu);margin-bottom:18px}
 .auth-fg{margin-bottom:13px}
-.auth-label{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px}
-.auth-input{width:100%;padding:11px 13px;border:1.5px solid var(--bd);border-radius:10px;font-size:14px;outline:none;font-family:inherit;transition:border .15s}
-.auth-input:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(79,124,110,.1)}
-.auth-btn{width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:4px}
+.auth-label{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;display:block;margin-bottom:5px}
+.auth-input{width:100%;padding:11px 13px;border:1.5px solid var(--bd);border-radius:10px;font-size:14px;outline:none;font-family:inherit}
+.auth-input:focus{border-color:var(--p)}
+.auth-btn{width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit}
 .auth-err{background:var(--rl);border:1.5px solid #f0a0a0;color:#8b0000;border-radius:9px;padding:10px 13px;font-size:12px;margin-top:10px;display:none;font-weight:600}
+
+/* TOPBAR */
 .topbar{background:#1a2235;padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .brand{display:flex;align-items:center;gap:10px}
 .brand-ico{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--p),var(--p2));display:flex;align-items:center;justify-content:center}
-.brand-ico svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.brand-ico svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
 .brand-name{font-size:16px;font-weight:800;color:#fff}
 .topbar-right{display:flex;align-items:center;gap:8px}
 .user-pill{background:rgba(255,255,255,.1);border-radius:20px;padding:4px 10px 4px 6px;display:flex;align-items:center;gap:6px}
 .user-av{width:24px;height:24px;border-radius:50%;background:var(--p);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff}
 .user-name{font-size:12px;color:rgba(255,255,255,.8);font-weight:600}
 .logout-btn{background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.5);font-size:12px;padding:4px 8px;border-radius:6px;cursor:pointer;font-family:inherit}
+
+/* BOTTOM NAV (HP) */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--bd);height:var(--nav-h);display:flex;align-items:center;z-index:50;padding:0 4px;box-shadow:0 -4px 20px rgba(0,0,0,.06)}
 .bn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 2px;cursor:pointer;gap:4px;border-radius:10px;position:relative}
 .bn-icon{font-size:20px;line-height:1}
@@ -47,45 +50,59 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f2f5f9;color:#1e253
 .bn-bar{position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:3px;border-radius:0 0 4px 4px;background:var(--p);opacity:0}
 .bn.on .bn-bar{opacity:1}
 .bn-dot{position:absolute;top:6px;right:calc(50% - 14px);width:8px;height:8px;border-radius:50%;background:var(--red);display:none;border:2px solid #fff}
+
+/* SIDEBAR (WEB) - hidden on mobile */
+.sidebar{display:none}
+
+/* MAIN */
 .main{min-height:calc(100vh - 56px - var(--nav-h));padding-bottom:calc(var(--nav-h) + 12px)}
 .page{display:none}.page.on{display:block}
-.section-title{font-size:16px;font-weight:800;color:var(--text);padding:16px 14px 10px}
+.section-title{font-size:16px;font-weight:800;padding:16px 14px 10px}
+
+/* STAT CARDS */
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px;margin-bottom:14px}
 .sc{background:#fff;border-radius:14px;border:1px solid var(--bd);padding:14px}
-.sc-label{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
-.sc-val{font-size:26px;font-weight:900;color:var(--text);line-height:1;margin-bottom:3px}
+.sc-label{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;margin-bottom:8px}
+.sc-val{font-size:26px;font-weight:900;line-height:1;margin-bottom:3px}
 .sc-sub{font-size:11px;color:var(--mu)}
+
+/* CARD */
 .card{background:#fff;border-radius:14px;border:1px solid var(--bd);margin:0 14px 12px;overflow:hidden}
 .ch{padding:13px 16px;border-bottom:1px solid #f0f3f7;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.ct{font-size:14px;font-weight:700;color:var(--text)}
+.ct{font-size:14px;font-weight:700}
 .cb{padding:12px 16px}
-.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{width:100%;border-collapse:collapse;font-size:13px;min-width:480px}
-th{text-align:left;padding:10px 12px;color:var(--mu);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1.5px solid var(--bd);background:#fafbfd;white-space:nowrap}
-td{padding:11px 12px;border-bottom:1px solid #f4f6f9;vertical-align:middle;color:var(--text)}
-tr:last-child td{border-bottom:none}
+
+/* BADGE */
 .b{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
 .bs{background:#e8f5ee;color:#267a4a}.bw{background:var(--al);color:#b5620a}
 .bd2{background:var(--rl);color:#b83c3c}.bi{background:var(--bl);color:#2d5f99}.bg{background:#f0f3f8;color:#5a6a82}
+
+/* BUTTON */
 .btn{padding:10px 18px;border-radius:10px;border:1.5px solid var(--bd);cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font-family:inherit}
 .bp{background:var(--p);color:#fff;border-color:var(--p)}
 .br{background:var(--red);color:#fff;border-color:var(--red)}
 .bo{background:#fff;color:#4a5568}
 .btn-full{width:100%;margin-bottom:8px}
 .btn-sm{padding:7px 14px;font-size:12px;border-radius:8px}
+
+/* FORM */
 .fg{margin-bottom:13px}
-.fl{font-size:11px;font-weight:700;color:var(--mu);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.04em}
-.fi,.fs{width:100%;padding:11px 13px;border:1.5px solid var(--bd);border-radius:10px;font-size:14px;outline:none;background:#fff;font-family:inherit;color:var(--text);-webkit-appearance:none;appearance:none}
+.fl{font-size:11px;font-weight:700;color:var(--mu);margin-bottom:5px;display:block;text-transform:uppercase}
+.fi,.fs{width:100%;padding:11px 13px;border:1.5px solid var(--bd);border-radius:10px;font-size:14px;outline:none;background:#fff;font-family:inherit;-webkit-appearance:none;appearance:none}
 .fi:focus,.fs:focus{border-color:var(--p)}
 .form-section{background:#fff;border-radius:14px;border:1px solid var(--bd);margin:0 14px 12px;padding:16px}
-.form-section .ct{font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bd)}
-.mo{position:fixed;inset:0;background:rgba(10,15,30,.5);display:none;align-items:flex-end;justify-content:center;z-index:100;backdrop-filter:blur(2px)}
+.form-section .ct{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bd)}
+
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(10,15,30,.5);display:none;align-items:flex-end;justify-content:center;z-index:100}
 .mo.open{display:flex}
 .md{background:#fff;border-radius:20px 20px 0 0;padding:20px 20px 32px;width:100%;max-height:90vh;overflow-y:auto;animation:slideup .25s ease}
 @keyframes slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .md-handle{width:36px;height:4px;background:#e0e5ed;border-radius:4px;margin:0 auto 18px}
-.mt{font-size:16px;font-weight:800;margin-bottom:18px;color:var(--text)}
+.mt{font-size:16px;font-weight:800;margin-bottom:18px}
 .mf{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+
+/* CHIP / FILTER */
 .chip{display:inline-flex;padding:7px 16px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px solid var(--bd);cursor:pointer;background:#fff;color:var(--mu);white-space:nowrap;flex-shrink:0}
 .chip.on{background:var(--pl);border-color:var(--p);color:var(--p2)}
 .si{width:100%;padding:11px 14px;border:1.5px solid var(--bd);border-radius:10px;font-size:14px;outline:none;background:#fff;font-family:inherit}
@@ -99,85 +116,104 @@ tr:last-child td{border-bottom:none}
 .hn{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hm{font-size:11px;color:var(--mu);margin-top:2px}
 .hq{font-size:14px;font-weight:800;flex-shrink:0}
-.brow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.blab{font-size:12px;color:var(--mu);width:110px;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.btrack{flex:1;height:22px;background:#f0f3f8;border-radius:6px;overflow:hidden}
-.bfill{height:100%;border-radius:6px;display:flex;align-items:center;padding-right:8px;justify-content:flex-end}
-.bval{font-size:11px;font-weight:700;color:#fff}
 .trx-item{padding:11px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:flex-start;gap:10px}
 .trx-type{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
 .trx-info{flex:1;min-width:0}
 .trx-nama{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .trx-meta{font-size:11px;color:var(--mu);margin-top:2px}
 .trx-qty{font-size:15px;font-weight:900;flex-shrink:0}
-code{background:#f0f3f8;padding:2px 6px;border-radius:5px;font-size:11px;font-family:'Courier New',monospace;color:#3a4a6a;font-weight:700}
+code{background:#f0f3f8;padding:2px 6px;border-radius:5px;font-size:11px;font-family:monospace;color:#3a4a6a;font-weight:700}
 .empty{text-align:center;color:var(--mu);padding:32px 20px;font-size:13px}
+
+/* FILTER BAR with arrow scroll */
 .filter-wrap{position:relative;padding:0 14px;margin-bottom:12px}
 .filter-bar{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-behavior:smooth;padding:2px 0}
 .filter-bar::-webkit-scrollbar{display:none}
-.filter-arrow{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:#fff;border:1.5px solid var(--bd);color:var(--text);font-size:20px;font-weight:900;cursor:pointer;z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.1);display:none;align-items:center;justify-content:center;font-family:inherit;line-height:1;padding:0}
+.filter-arrow{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:#fff;border:1.5px solid var(--bd);color:var(--text);font-size:20px;font-weight:900;cursor:pointer;z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.1);display:none;align-items:center;justify-content:center;font-family:inherit;line-height:1}
 .filter-arrow-left{left:-6px}
 .filter-arrow-right{right:-6px}
 .filter-wrap.has-scroll .filter-arrow{display:flex}
 @media(max-width:767px){.filter-wrap .filter-arrow{display:none!important}}
 .search-wrap{padding:0 14px;margin-bottom:12px}
+
+/* PAGINATION */
 .pager{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 10px;border-top:1px solid #f4f6f9;background:#fff;flex-wrap:wrap}
-.pager-btn{padding:6px 12px;border-radius:8px;border:1.5px solid var(--bd);background:#fff;color:#4a5568;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;min-width:72px}
+.pager-btn{padding:6px 12px;border-radius:8px;border:1.5px solid var(--bd);background:#fff;color:#4a5568;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;min-width:80px}
 .pager-btn:disabled{opacity:.5;cursor:not-allowed}
 .pager-info{font-size:12px;font-weight:700;color:var(--mu);min-width:90px;text-align:center}
-.pager-size{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--mu);font-weight:700}
-.pager-size select{padding:5px 8px;border:1.5px solid var(--bd);border-radius:8px;background:#fff;color:var(--text);font-size:12px;font-family:inherit;outline:none}
-.select2-container{width:100%!important}
-.select2-container--default .select2-selection--single{height:44px;border:1.5px solid var(--bd);border-radius:10px;background:#fff}
-.select2-container--default .select2-selection--single .select2-selection__rendered{line-height:41px;padding-left:13px;color:var(--text);font-size:14px}
-.select2-container--default .select2-selection--single .select2-selection__arrow{height:42px;right:8px}
-.select2-dropdown{border:1.5px solid var(--bd);border-radius:10px;overflow:hidden}
+
+/* COLLAPSIBLE */
 .collapse-btn{padding:5px 10px;border:1.5px solid var(--bd);border-radius:8px;background:#fff;color:#4a5568;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
-.collapsible{overflow:hidden;max-height:2000px;opacity:1;transition:max-height .28s ease,opacity .22s ease}
+.collapsible{overflow:hidden;max-height:5000px;opacity:1;transition:max-height .3s,opacity .25s}
 .collapsible.is-closed{max-height:0;opacity:0;pointer-events:none}
+
 .credit{text-align:center;padding:16px;font-size:11px;color:var(--mu);border-top:1px solid var(--bd);margin:8px 14px 0}
 .credit strong{color:var(--p2);font-weight:800}
 .admin-only{display:none!important}
 body.is-admin .admin-only{display:inline-flex!important}
 body.is-admin button.admin-only{display:inline-flex!important}
 #toast{position:fixed;bottom:calc(var(--nav-h) + 14px);left:14px;right:14px;padding:13px 18px;border-radius:12px;font-size:13px;font-weight:700;z-index:999;display:none;color:#fff;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.2)}
-@media(min-width:768px){
-  body{background:linear-gradient(180deg,#eef3f8 0%,#f7fafd 100%)}
-  #app{max-width:1220px;margin:0 auto;padding:0 14px 18px}
-  .topbar{margin:0 6px;border-radius:0 0 14px 14px}
-  .bottom-nav{position:sticky;top:64px;left:auto;right:auto;bottom:auto;height:auto;margin:10px 6px 0;padding:8px;border:1px solid var(--bd);border-radius:14px;justify-content:flex-start;gap:8px;overflow-x:auto}
-  .bn{flex:0 0 auto;min-width:130px;flex-direction:row;gap:8px;padding:10px 12px}
-  .bn.on{background:var(--pl)}
-  .bn-bar{display:none}
-  .main{min-height:calc(100vh - 56px - 76px);padding:14px 6px 24px}
-  .sgrid,.card,.form-section,.search-wrap,.filter-wrap,.alert,.credit{margin-left:6px;margin-right:6px}
-  #page-dashboard .sgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .md{max-width:640px;border-radius:20px}
-  .mo{align-items:center}
-}
+
+/* ═══ WEB / DESKTOP LAYOUT — SIDEBAR ═══ */
 @media(min-width:1024px){
-  #page-dashboard .sgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  body{background:#eef3f8}
+  #app{
+    display:grid;
+    grid-template-columns:var(--side-w) 1fr;
+    grid-template-rows:56px 1fr;
+    grid-template-areas:"top top" "side main";
+    min-height:100vh;
+  }
+  .topbar{grid-area:top}
+  .bottom-nav{display:none!important}
+  .sidebar{
+    display:flex!important;
+    grid-area:side;
+    flex-direction:column;
+    background:#fff;
+    border-right:1px solid var(--bd);
+    padding:18px 12px;
+    position:sticky;
+    top:56px;
+    height:calc(100vh - 56px);
+    overflow-y:auto;
+  }
+  .sd-item{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 14px;border-radius:10px;cursor:pointer;
+    color:var(--mu);font-weight:700;font-size:14px;
+    margin-bottom:4px;border:1.5px solid transparent;
+  }
+  .sd-item:hover{background:#f7faf8}
+  .sd-item.on{background:var(--pl);color:var(--p2);border-color:#b9d8cf}
+  .sd-icon{font-size:18px;line-height:1;width:22px;text-align:center}
+  .sd-label{flex:1}
+  .sd-dot{width:8px;height:8px;border-radius:50%;background:var(--red);display:none}
+  .sd-item.has-dot .sd-dot{display:block}
+  .sd-sep{height:1px;background:var(--bd);margin:12px 0}
+  .sd-section{font-size:10px;font-weight:800;color:var(--mu);text-transform:uppercase;padding:8px 14px 6px;letter-spacing:.05em}
+  .main{grid-area:main;min-height:0;padding:18px 8px 24px}
+  .section-title{padding:6px 14px 12px;font-size:20px}
+  .md{max-width:600px;border-radius:20px}
+  .mo{align-items:center}
+  #page-dashboard .sgrid{grid-template-columns:repeat(4,1fr)}
 }
 </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div class="auth-screen" id="screen-login">
   <div class="auth-wrap">
     <div class="auth-box">
       <div class="auth-logo">
-        <div class="auth-logo-ico">
-          <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-        </div>
-        <div>
-          <div class="auth-logo-name">RRQ</div>
-          <div class="auth-logo-sub">Sistem Manajemen Sparepart</div>
-        </div>
+        <div class="auth-logo-ico"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div><div class="auth-logo-name">RRQ</div><div class="auth-logo-sub">Sistem Manajemen Sparepart</div></div>
       </div>
       <div class="auth-title">Masuk ke Akun</div>
       <div class="auth-desc">Gunakan username dan password yang diberikan admin</div>
-      <div class="auth-fg"><label class="auth-label">Username</label><input class="auth-input" id="login-user" placeholder="Username"></div>
-      <div class="auth-fg"><label class="auth-label">Password</label><input class="auth-input" type="password" id="login-pass" placeholder="Password"></div>
+      <div class="auth-fg"><label class="auth-label">Username</label><input class="auth-input" id="login-user"></div>
+      <div class="auth-fg"><label class="auth-label">Password</label><input class="auth-input" type="password" id="login-pass"></div>
       <button class="auth-btn" onclick="doLogin()">Masuk</button>
       <div class="auth-err" id="login-err"></div>
       <div class="credit" style="margin:18px 0 0;border:none;padding:0">Dibuat oleh <strong>GII-BOX</strong></div>
@@ -185,10 +221,11 @@ body.is-admin button.admin-only{display:inline-flex!important}
   </div>
 </div>
 
+<!-- APP -->
 <div id="app" style="display:none">
   <div class="topbar">
     <div class="brand">
-      <div class="brand-ico"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+      <div class="brand-ico"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <div class="brand-name">RRQ</div>
     </div>
     <div class="topbar-right">
@@ -196,7 +233,23 @@ body.is-admin button.admin-only{display:inline-flex!important}
       <button class="logout-btn" onclick="doLogout()">Keluar</button>
     </div>
   </div>
+
+  <!-- SIDEBAR (web only) -->
+  <aside class="sidebar">
+    <div class="sd-section">Menu Utama</div>
+    <div class="sd-item on" onclick="go('dashboard',this)"><span class="sd-icon">🏠</span><span class="sd-label">Dashboard</span></div>
+    <div class="sd-item" onclick="go('stok',this)" id="sd-stok"><span class="sd-icon">📦</span><span class="sd-label">Stok</span><span class="sd-dot"></span></div>
+    <div class="sd-item" onclick="go('transaksi',this)"><span class="sd-icon">🔄</span><span class="sd-label">Transaksi</span></div>
+    <div class="sd-item" onclick="go('sku',this)"><span class="sd-icon">🏷</span><span class="sd-label">Kelola SKU</span></div>
+    <div class="sd-sep"></div>
+    <div class="sd-section">Manajemen</div>
+    <div class="sd-item admin-only" onclick="go('karyawan',this)" style="display:none"><span class="sd-icon">👥</span><span class="sd-label">Kelola Akun</span></div>
+    <div class="sd-item" onclick="go('laporan',this)"><span class="sd-icon">📊</span><span class="sd-label">Laporan</span></div>
+    <div class="sd-item" onclick="go('riwayat',this)"><span class="sd-icon">📋</span><span class="sd-label">Riwayat</span></div>
+  </aside>
+
   <div class="main">
+    <!-- DASHBOARD -->
     <div class="page on" id="page-dashboard">
       <div class="section-title">Dashboard</div>
       <div class="sgrid">
@@ -205,12 +258,12 @@ body.is-admin button.admin-only{display:inline-flex!important}
         <div class="sc"><div class="sc-label">Stok Kritis</div><div class="sc-val" id="d-low" style="color:#b5620a">0</div><div class="sc-sub">perlu restock</div></div>
         <div class="sc"><div class="sc-label">Karyawan</div><div class="sc-val" id="d-kar">0</div><div class="sc-sub">terdaftar</div></div>
       </div>
-      <div id="d-alerts"></div>
-      <div class="card"><div class="ch"><span class="ct">Transaksi Terbaru</span></div><div id="d-recent"><p class="empty">Belum ada transaksi</p></div></div>
-      <div class="card"><div class="ch"><span class="ct">Stok Terendah</span></div><div class="cb" id="d-low2"><p class="empty">Belum ada data</p></div></div>
+      <div class="card"><div class="ch"><span class="ct">Stok Kritis</span><button class="collapse-btn" onclick="toggleC('d-alerts',this)">Tutup</button></div><div id="d-alerts" class="collapsible cb"></div></div>
+      <div class="card"><div class="ch"><span class="ct">Transaksi Terbaru</span><button class="collapse-btn" onclick="toggleC('d-recent',this)">Tutup</button></div><div id="d-recent" class="collapsible"></div></div>
       <div class="credit">Dibuat oleh <strong>GII-BOX</strong></div>
     </div>
 
+    <!-- STOK -->
     <div class="page" id="page-stok">
       <div class="section-title">Stok Sparepart</div>
       <div class="search-wrap"><input class="si" id="s-q" placeholder="Cari SKU / nama sparepart..." oninput="onStokSearch()"></div>
@@ -220,11 +273,18 @@ body.is-admin button.admin-only{display:inline-flex!important}
         <button class="filter-arrow filter-arrow-right" onclick="scrollChips('s-chips',1)">›</button>
       </div>
       <div class="card">
-        <div class="ch"><span class="ct">Daftar Sparepart</span><span class="b bi" id="sku-cnt">0 SKU</span></div>
-        <div id="stok-list"></div>
+        <div class="ch">
+          <span class="ct">Daftar Sparepart</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="b bi" id="stok-cnt">0 SKU</span>
+            <button class="collapse-btn" onclick="toggleC('stok-list',this)">Tutup</button>
+          </div>
+        </div>
+        <div id="stok-list" class="collapsible"></div>
       </div>
     </div>
 
+    <!-- TRANSAKSI -->
     <div class="page" id="page-transaksi">
       <div class="ch" style="padding:14px 14px 0;border:none;background:transparent">
         <span class="section-title" style="padding:0">Transaksi</span>
@@ -251,37 +311,58 @@ body.is-admin button.admin-only{display:inline-flex!important}
           <button class="btn bp btn-sm admin-only" id="approve-all-btn" onclick="approveAll()">Approve Semua</button>
         </div>
       </div>
-      <div class="card"><div id="trx-list"></div></div>
+      <div class="card">
+        <div class="ch"><span class="ct">Daftar Transaksi</span><button class="collapse-btn" onclick="toggleC('trx-list',this)">Tutup</button></div>
+        <div id="trx-list" class="collapsible"></div>
+      </div>
     </div>
 
+    <!-- SKU -->
     <div class="page" id="page-sku">
       <div class="section-title">Kelola SKU</div>
       <div class="form-section">
-        <div class="ct">Tambah SKU Baru</div>
-        <div class="fg"><label class="fl">Kode SKU</label><input class="fi" id="sk-kode" placeholder="SP-001"></div>
-        <div class="fg"><label class="fl">Nama Sparepart</label><input class="fi" id="sk-nama" placeholder="Nama lengkap"></div>
-        <div class="fg"><label class="fl">Kategori</label><select class="fs" id="sk-kat"></select></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-          <div class="fg"><label class="fl">Satuan</label><input class="fi" id="sk-sat" placeholder="pcs"></div>
-          <div class="fg"><label class="fl">Stok Awal</label><input class="fi" type="number" id="sk-stok" placeholder="0" min="0"></div>
-          <div class="fg"><label class="fl">Min. Stok</label><input class="fi" type="number" id="sk-min" placeholder="10" min="0"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
+          <div class="ct" style="margin:0;padding:0;border:none">Tambah SKU Baru</div>
+          <button class="collapse-btn" onclick="toggleC('sku-form-body',this)">Tutup</button>
         </div>
-        <button class="btn bp btn-full" onclick="addSKU()">Simpan SKU</button>
+        <div id="sku-form-body" class="collapsible">
+          <div class="fg"><label class="fl">Kode SKU</label><input class="fi" id="sk-kode" placeholder="SP-001"></div>
+          <div class="fg"><label class="fl">Nama Sparepart</label><input class="fi" id="sk-nama" placeholder="Nama lengkap"></div>
+          <div class="fg"><label class="fl">Kategori</label><select class="fs" id="sk-kat"></select></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div class="fg"><label class="fl">Satuan</label><input class="fi" id="sk-sat" placeholder="pcs"></div>
+            <div class="fg"><label class="fl">Stok Awal</label><input class="fi" type="number" id="sk-stok" placeholder="0" min="0"></div>
+            <div class="fg"><label class="fl">Min. Stok</label><input class="fi" type="number" id="sk-min" placeholder="10" min="0"></div>
+          </div>
+          <button class="btn bp btn-full" onclick="addSKU()">Simpan SKU</button>
+        </div>
       </div>
       <div class="form-section">
-        <div class="ct">Kelola Kategori</div>
-        <div style="display:flex;gap:8px;margin-bottom:12px">
-          <input class="fi" id="kat-baru" placeholder="Nama kategori baru..." style="flex:1">
-          <button class="btn bp btn-sm" onclick="tambahKat()">Tambah</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
+          <div class="ct" style="margin:0;padding:0;border:none">Kelola Kategori</div>
+          <button class="collapse-btn" onclick="toggleC('kat-body',this)">Tutup</button>
         </div>
-        <div id="kat-list"></div>
+        <div id="kat-body" class="collapsible">
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <input class="fi" id="kat-baru" placeholder="Nama kategori baru..." style="flex:1">
+            <button class="btn bp btn-sm" onclick="tambahKat()">Tambah</button>
+          </div>
+          <div id="kat-list"></div>
+        </div>
       </div>
       <div class="card">
-        <div class="ch"><span class="ct">Daftar SKU</span><span class="b bi" id="sku-cnt2">0 SKU</span></div>
-        <div id="sku-list"></div>
+        <div class="ch">
+          <span class="ct">Daftar SKU</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="b bi" id="sku-cnt2">0 SKU</span>
+            <button class="collapse-btn" onclick="toggleC('sku-list',this)">Tutup</button>
+          </div>
+        </div>
+        <div id="sku-list" class="collapsible"></div>
       </div>
     </div>
 
+    <!-- KARYAWAN -->
     <div class="page" id="page-karyawan">
       <div class="ch" style="padding:14px 14px 0;border:none;background:transparent">
         <span class="section-title" style="padding:0">Kelola Akun</span>
@@ -289,33 +370,36 @@ body.is-admin button.admin-only{display:inline-flex!important}
       </div>
       <div style="height:12px"></div>
       <div class="card">
-        <div class="ch"><span class="ct">Daftar Akun</span><span class="b bs" id="kar-cnt">0</span></div>
-        <div id="kar-list"></div>
+        <div class="ch"><span class="ct">Daftar Akun</span><div style="display:flex;gap:8px;align-items:center"><span class="b bs" id="kar-cnt">0</span><button class="collapse-btn" onclick="toggleC('kar-list',this)">Tutup</button></div></div>
+        <div id="kar-list" class="collapsible"></div>
       </div>
     </div>
 
+    <!-- LAPORAN -->
     <div class="page" id="page-laporan">
       <div class="section-title">Laporan Stok</div>
       <div class="sgrid">
         <div class="sc"><div class="sc-label">Total Masuk</div><div class="sc-val" id="l-in" style="color:var(--p2)">0</div></div>
         <div class="sc"><div class="sc-label">Total Keluar</div><div class="sc-val" id="l-out" style="color:var(--red)">0</div></div>
-        <div class="sc"><div class="sc-label">Stok Saat Ini</div><div class="sc-val" id="l-stok">0</div></div>
-        <div class="sc"><div class="sc-label">Total Transaksi</div><div class="sc-val" id="l-trx">0</div></div>
+        <div class="sc"><div class="sc-label">Stok Total</div><div class="sc-val" id="l-stok">0</div></div>
+        <div class="sc"><div class="sc-label">Transaksi</div><div class="sc-val" id="l-trx">0</div></div>
       </div>
     </div>
 
+    <!-- RIWAYAT -->
     <div class="page" id="page-riwayat">
       <div class="section-title">Riwayat</div>
       <div style="padding:0 14px;margin-bottom:12px">
         <input class="si" id="riw-q" placeholder="Cari sparepart, karyawan..." oninput="onRiwSearch()">
       </div>
       <div class="card">
-        <div class="ch"><span class="ct">Log Aktivitas</span><span class="b bi" id="r-cnt">0</span></div>
-        <div id="riw-list"></div>
+        <div class="ch"><span class="ct">Log Aktivitas</span><div style="display:flex;gap:8px;align-items:center"><span class="b bi" id="r-cnt">0</span><button class="collapse-btn" onclick="toggleC('riw-list',this)">Tutup</button></div></div>
+        <div id="riw-list" class="collapsible"></div>
       </div>
     </div>
   </div>
 
+  <!-- BOTTOM NAV (HP only) -->
   <div class="bottom-nav">
     <div class="bn on" onclick="go('dashboard',this)"><div class="bn-bar"></div><div class="bn-icon">🏠</div><div class="bn-label">Dashboard</div></div>
     <div class="bn" onclick="go('stok',this)"><div class="bn-bar"></div><div class="bn-dot" id="bn-dot"></div><div class="bn-icon">📦</div><div class="bn-label">Stok</div></div>
@@ -325,6 +409,8 @@ body.is-admin button.admin-only{display:inline-flex!important}
   </div>
 </div>
 
+
+<!-- MODALS -->
 <div class="mo" id="m-detail"><div class="md" style="max-height:85vh">
   <div class="md-handle"></div>
   <div style="font-size:11px;color:var(--mu);font-weight:700;text-transform:uppercase">Detail SKU</div>
@@ -343,12 +429,12 @@ body.is-admin button.admin-only{display:inline-flex!important}
 <div class="mo" id="m-confirm"><div class="md">
   <div class="md-handle"></div>
   <div style="text-align:center;padding:8px 0 16px">
-    <div style="font-size:32px;margin-bottom:10px">🗑️</div>
+    <div style="font-size:32px;margin-bottom:10px">⚠️</div>
     <div class="mt" style="margin-bottom:6px" id="confirm-title">Hapus?</div>
     <div style="font-size:13px;color:var(--mu)" id="confirm-msg">Data tidak dapat dikembalikan.</div>
   </div>
   <div class="mf">
-    <button class="btn br btn-full" id="confirm-ok">Hapus</button>
+    <button class="btn br btn-full" id="confirm-ok">Ya</button>
     <button class="btn bo btn-full" onclick="closeM('m-confirm')">Batal</button>
   </div>
 </div></div>
@@ -365,8 +451,8 @@ body.is-admin button.admin-only{display:inline-flex!important}
   <div class="md-handle"></div>
   <div class="mt">Input Stok Masuk</div>
   <div class="fg"><label class="fl">Sparepart</label><select class="fs" id="i-sku"></select></div>
-  <div class="fg"><label class="fl">Jumlah</label><input class="fi" type="number" id="i-qty" placeholder="0" min="1"></div>
-  <div class="fg"><label class="fl">Keterangan</label><input class="fi" id="i-ket" placeholder="Supplier / No. PO..."></div>
+  <div class="fg"><label class="fl">Jumlah</label><input class="fi" type="number" id="i-qty" min="1"></div>
+  <div class="fg"><label class="fl">Keterangan</label><input class="fi" id="i-ket" placeholder="Supplier / PO..."></div>
   <div class="mf">
     <button class="btn bp btn-full" onclick="doInput()">Simpan</button>
     <button class="btn bo btn-full" onclick="closeM('m-in')">Batal</button>
@@ -378,8 +464,8 @@ body.is-admin button.admin-only{display:inline-flex!important}
   <div class="mt">Potong Stok Keluar</div>
   <div class="fg"><label class="fl">Sparepart</label><select class="fs" id="o-sku" onchange="updOutInfo()"></select></div>
   <div id="o-info" style="font-size:12px;color:var(--mu);margin:-8px 0 12px;font-weight:600"></div>
-  <div class="fg"><label class="fl">Jumlah</label><input class="fi" type="number" id="o-qty" placeholder="0" min="1"></div>
-  <div class="fg"><label class="fl">Keterangan</label><input class="fi" id="o-ket" placeholder="Untuk servis..."></div>
+  <div class="fg"><label class="fl">Jumlah</label><input class="fi" type="number" id="o-qty" min="1"></div>
+  <div class="fg"><label class="fl">Keterangan</label><input class="fi" id="o-ket"></div>
   <div class="mf">
     <button class="btn br btn-full" id="o-submit" onclick="doOutput()">Potong Stok</button>
     <button class="btn bo btn-full" onclick="closeM('m-out')">Batal</button>
@@ -390,13 +476,46 @@ body.is-admin button.admin-only{display:inline-flex!important}
   <div class="md-handle"></div>
   <div class="mt">Tambah Akun Karyawan</div>
   <div class="fg"><label class="fl">Nama Lengkap</label><input class="fi" id="k-nama"></div>
-  <div class="fg"><label class="fl">Username</label><input class="fi" id="k-user" placeholder="tanpa spasi"></div>
+  <div class="fg"><label class="fl">Username</label><input class="fi" id="k-user"></div>
   <div class="fg"><label class="fl">Password</label><input class="fi" type="password" id="k-pass"></div>
   <div class="fg"><label class="fl">Jabatan</label><select class="fs" id="k-jab"><option>Teknisi</option><option>Mekanik</option><option>Gudang</option></select></div>
   <div class="fg"><label class="fl">No. HP</label><input class="fi" id="k-hp"></div>
   <div class="mf">
     <button class="btn bp btn-full" onclick="doKar()">Simpan</button>
     <button class="btn bo btn-full" onclick="closeM('m-kar')">Batal</button>
+  </div>
+</div></div>
+
+<!-- EDIT KARYAWAN -->
+<div class="mo" id="m-kar-edit"><div class="md">
+  <div class="md-handle"></div>
+  <div class="mt">Edit Akun Karyawan</div>
+  <div class="fg"><label class="fl">Nama Lengkap</label><input class="fi" id="ek-nama"></div>
+  <div class="fg"><label class="fl">Username</label><input class="fi" id="ek-user" disabled style="background:#f4f6f9"></div>
+  <div class="fg"><label class="fl">Password Baru</label><input class="fi" type="password" id="ek-pass" placeholder="Kosongkan jika tidak ganti"></div>
+  <div class="fg"><label class="fl">Jabatan</label><select class="fs" id="ek-jab"><option>Teknisi</option><option>Mekanik</option><option>Gudang</option></select></div>
+  <div class="fg"><label class="fl">No. HP</label><input class="fi" id="ek-hp"></div>
+  <div class="mf">
+    <button class="btn bp btn-full" onclick="saveEditKar()">Simpan Perubahan</button>
+    <button class="btn bo btn-full" onclick="closeM('m-kar-edit')">Batal</button>
+  </div>
+</div></div>
+
+<!-- EDIT SKU -->
+<div class="mo" id="m-sku-edit"><div class="md">
+  <div class="md-handle"></div>
+  <div class="mt">Edit SKU</div>
+  <div class="fg"><label class="fl">Kode SKU</label><input class="fi" id="e-sk-kode"></div>
+  <div class="fg"><label class="fl">Nama Sparepart</label><input class="fi" id="e-sk-nama"></div>
+  <div class="fg"><label class="fl">Kategori</label><select class="fs" id="e-sk-kat"></select></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+    <div class="fg"><label class="fl">Satuan</label><input class="fi" id="e-sk-sat"></div>
+    <div class="fg"><label class="fl">Stok</label><input class="fi" type="number" id="e-sk-stok" min="0"></div>
+    <div class="fg"><label class="fl">Min</label><input class="fi" type="number" id="e-sk-min" min="0"></div>
+  </div>
+  <div class="mf">
+    <button class="btn bp btn-full" onclick="saveEditSKU()">Simpan</button>
+    <button class="btn bo btn-full" onclick="closeM('m-sku-edit')">Batal</button>
   </div>
 </div></div>
 
@@ -409,10 +528,11 @@ let catFilter='',lowFilter=false;
 let currentUser=null;
 let trxDateFilter='';
 let trxSearchQ='',trxTab='pending',riwSearchQ='';
+let editSkuKey='',editKarKey='';
 const pagerState={stok:1,trx:1,sku:1,kar:1,riw:1};
-const PG_SIZE=10;
+const PG_SIZE=20;
 
-// ══ HORIZONTAL SCROLL ARROWS ══
+// ══ SCROLL ARROWS ══
 function scrollChips(barId,dir){
   const bar=document.getElementById(barId);
   if(!bar)return;
@@ -423,8 +543,15 @@ function updateChipArrows(barId){
   if(!bar)return;
   const wrap=bar.parentElement;
   if(!wrap||!wrap.classList.contains('filter-wrap'))return;
-  const hasOverflow=bar.scrollWidth>bar.clientWidth+2;
-  wrap.classList.toggle('has-scroll',hasOverflow);
+  wrap.classList.toggle('has-scroll',bar.scrollWidth>bar.clientWidth+2);
+}
+
+// ══ COLLAPSE ══
+function toggleC(id,btn){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.classList.toggle('is-closed');
+  if(btn)btn.textContent=el.classList.contains('is-closed')?'Buka':'Tutup';
 }
 
 // ══ HELPERS ══
@@ -440,6 +567,7 @@ const sArr=()=>Object.values(allS);
 const tArrAll=()=>Object.values(allT).sort((a,b)=>(b.ts||0)-(a.ts||0));
 const tArr=()=>tArrAll().filter(t=>!t.deleted);
 const kArr=()=>Object.values(allK);
+const esc=s=>(s||'').toString().replace(/"/g,'&quot;');
 
 function toast(msg,type){
   const t=document.getElementById('toast');
@@ -517,11 +645,11 @@ function listen(){
   });
   db.ref('sparepart').on('value',snap=>{
     allS={};if(snap.val())snap.forEach(c=>{allS[c.key]={...c.val(),_key:c.key}});
-    renderStok();renderSKU();renderDash();updSel();
+    renderStok();renderSKU();renderDash();renderLap();updSel();
   });
   db.ref('transaksi').orderByChild('ts').on('value',snap=>{
     allT={};if(snap.val())snap.forEach(c=>{allT[c.key]={...c.val(),_key:c.key}});
-    renderTrx();renderRiw();renderDash();renderSKU();
+    renderTrx();renderRiw();renderDash();renderSKU();renderLap();
   });
   db.ref('users').on('value',snap=>{
     allK={};if(snap.val())snap.forEach(c=>{if(c.val().role!=='admin')allK[c.key]={...c.val(),_key:c.key}});
@@ -533,11 +661,12 @@ function showScreen(s){
   document.getElementById('screen-login').style.display='none';
   document.getElementById('app').style.display='none';
   if(s==='login')document.getElementById('screen-login').style.display='block';
-  else if(s==='app')document.getElementById('app').style.display='block';
+  else if(s==='app')document.getElementById('app').style.display='';
 }
 
+
 function updSel(){
-  const so='<option value="">-- Pilih Sparepart --</option>'+sArr().map(v=>`<option value="${v._key}">${v.sku} — ${v.nama} (${v.stok} ${v.sat})</option>`).join('');
+  const so='<option value="">-- Pilih --</option>'+sArr().map(v=>`<option value="${v._key}">${v.sku} — ${v.nama} (${v.stok} ${v.sat})</option>`).join('');
   ['i-sku','o-sku'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=so});
   updOutInfo();
   const ch=document.getElementById('s-chips');
@@ -562,17 +691,19 @@ function updOutInfo(){
 }
 
 function renderKatSelect(){
-  const el=document.getElementById('sk-kat');if(!el)return;
-  const cur=el.value;
-  el.innerHTML=allKat.map(k=>`<option value="${k.nama.toLowerCase()}">${k.nama}</option>`).join('');
-  if(cur)el.value=cur;
+  ['sk-kat','e-sk-kat'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    const cur=el.value;
+    el.innerHTML=allKat.map(k=>`<option value="${k.nama.toLowerCase()}">${k.nama}</option>`).join('');
+    if(cur)el.value=cur;
+  });
 }
 function renderKatList(){
   const el=document.getElementById('kat-list');if(!el)return;
   if(!allKat.length){el.innerHTML='<p style="font-size:13px;color:var(--mu);text-align:center;padding:12px">Belum ada kategori</p>';return}
   el.innerHTML=allKat.map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f4f6f9">
     <span style="font-size:13px;font-weight:600">${k.nama}</span>
-    <button class="del-kat-btn" data-key="${k.key}" data-nama="${k.nama}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit">Hapus</button>
+    <button class="del-kat-btn" data-key="${k.key}" data-nama="${esc(k.nama)}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit">Hapus</button>
   </div>`).join('');
   document.querySelectorAll('.del-kat-btn').forEach(btn=>{
     btn.addEventListener('click',function(){
@@ -617,6 +748,7 @@ function renderTrxTabs(){
   requestAnimationFrame(()=>updateChipArrows('trx-tabs'));
 }
 
+// ══ RENDER STOK (with Detail, Edit, Hapus buttons) ══
 function renderStok(){
   const q=(document.getElementById('s-q')||{}).value?.toLowerCase()||'';
   let f=sArr().filter(v=>{
@@ -624,79 +756,106 @@ function renderStok(){
     return mq&&(!catFilter||v.kat===catFilter)&&(!lowFilter||v.stok<=v.min*1.5);
   });
   f.sort((a,b)=>{const r=v=>v.stok<=v.min?0:v.stok<=v.min*1.5?1:2;return r(a)-r(b)});
-  const cnt=document.getElementById('sku-cnt');if(cnt)cnt.textContent=f.length+' SKU';
+  const cnt=document.getElementById('stok-cnt');if(cnt)cnt.textContent=f.length+' SKU';
   const low=sArr().filter(v=>v.stok<=v.min).length;
   const bn=document.getElementById('bn-dot');if(bn)bn.style.display=low?'block':'none';
+  const sd=document.getElementById('sd-stok');if(sd)sd.classList.toggle('has-dot',low>0);
   const el=document.getElementById('stok-list');if(!el)return;
   const pg=paginate(f,'stok');
+  const isAdmin=currentUser&&currentUser.role==='admin';
   el.innerHTML=pg.count?pg.items.map(d=>{
     const col=scol(d.stok,d.min);const[bc,lb]=sstat(d.stok,d.min);
-    return`<div class="stok-row" data-sku="${d.sku}" data-nama="${d.nama.replace(/"/g,'&quot;')}" style="padding:14px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px;cursor:pointer">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:700">${d.nama}</div>
-        <div style="font-size:11px;color:var(--mu);margin-top:3px"><code>${d.sku}</code> &bull; ${cap(d.kat)}</div>
+    return`<div style="padding:14px 16px;border-bottom:1px solid #f4f6f9">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700">${d.nama}</div>
+          <div style="font-size:11px;color:var(--mu);margin-top:3px"><code>${d.sku}</code> &bull; ${cap(d.kat)}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:22px;font-weight:900;color:${col};line-height:1">${d.stok}</div>
+          <div style="font-size:10px;color:var(--mu)">${d.sat}</div>
+          <span class="b ${bc}" style="font-size:10px;padding:2px 8px;margin-top:4px;display:inline-flex">${lb}</span>
+        </div>
       </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div style="font-size:22px;font-weight:900;color:${col};line-height:1">${d.stok}</div>
-        <div style="font-size:10px;color:var(--mu)">${d.sat}</div>
-        <span class="b ${bc}" style="font-size:10px;padding:2px 8px;margin-top:4px;display:inline-flex">${lb}</span>
+      <div style="display:flex;gap:6px;margin-top:10px;justify-content:flex-end;flex-wrap:wrap">
+        <button class="detail-btn" data-sku="${esc(d.sku)}" data-nama="${esc(d.nama)}" style="font-size:11px;font-weight:700;color:var(--p2);background:var(--pl);border:1.5px solid #b2dfca;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Detail</button>
+        ${isAdmin?`<button class="edit-sku-btn" data-key="${d._key}" style="font-size:11px;font-weight:700;color:#2d5f99;background:var(--bl);border:1.5px solid #b5d0ed;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Edit</button>
+        <button class="del-sku-btn" data-key="${d._key}" data-nama="${esc(d.nama)}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Hapus</button>`:''}
       </div>
-      <div style="color:var(--mu);font-size:18px">›</div>
     </div>`;
   }).join('')+pagerHTML('stok',pg.page,pg.total,pg.count):emp('Tidak ada sparepart');
-  document.querySelectorAll('.stok-row').forEach(row=>{
-    row.addEventListener('click',function(){
-      showDetailSKU(this.getAttribute('data-sku'),this.getAttribute('data-nama'));
-    });
-  });
+  attachSkuButtons();
 }
 
+// ══ RENDER SKU LIST (ringkas — tanpa angka stok) ══
 function renderSKU(){
   const el=document.getElementById('sku-list');const cnt=document.getElementById('sku-cnt2');if(!el)return;
   const arr=sArr();
   if(cnt)cnt.textContent=arr.length+' SKU';
   const pg=paginate(arr,'sku');
   const isAdmin=currentUser&&currentUser.role==='admin';
-  el.innerHTML=pg.count?pg.items.map(d=>{
-    const skuLow=(d.sku||'').toLowerCase();
-    const namaLow=(d.nama||'').toLowerCase();
-    const tx=tArr().filter(t=>{
-      const tsku=(t.sku||'').toLowerCase();
-      const tnama=(t.sparepart||'').toLowerCase();
-      return tsku===skuLow||tnama===namaLow;
-    });
-    const masuk=tx.filter(t=>t.tipe==='masuk').reduce((s,t)=>s+t.qty,0);
-    const keluar=tx.filter(t=>t.tipe==='keluar').reduce((s,t)=>s+t.qty,0);
-    return`<div style="padding:13px 16px;border-bottom:1px solid #f4f6f9">
-      <div style="display:flex;align-items:flex-start;gap:12px">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700">${d.nama}</div>
-          <div style="font-size:11px;color:var(--mu);margin-top:2px"><code>${d.sku}</code> &bull; ${cap(d.kat)}</div>
-          <div style="display:flex;gap:10px;margin-top:6px">
-            <span style="font-size:11px;color:#3a6358;font-weight:700">↑ ${masuk}</span>
-            <span style="font-size:11px;color:#d95f5f;font-weight:700">↓ ${keluar}</span>
-          </div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:18px;font-weight:900;color:${scol(d.stok,d.min)}">${d.stok}</div>
-          <div style="font-size:10px;color:var(--mu)">min: ${d.min}</div>
-        </div>
-      </div>
-      ${isAdmin?`<div style="display:flex;gap:6px;margin-top:10px;justify-content:flex-end">
-        <button class="del-sku-btn" data-key="${d._key}" data-nama="${d.nama.replace(/"/g,'&quot;')}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Hapus</button>
-      </div>`:''}
-    </div>`;
-  }).join('')+pagerHTML('sku',pg.page,pg.total,pg.count):emp('Belum ada SKU');
+  el.innerHTML=pg.count?pg.items.map(d=>`<div style="padding:13px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:700">${d.nama}</div>
+      <div style="font-size:11px;color:var(--mu);margin-top:2px"><code>${d.sku}</code> &bull; ${cap(d.kat)} &bull; ${d.sat}</div>
+    </div>
+    ${isAdmin?`<div style="display:flex;gap:6px">
+      <button class="edit-sku-btn" data-key="${d._key}" style="font-size:11px;font-weight:700;color:#2d5f99;background:var(--bl);border:1.5px solid #b5d0ed;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Edit</button>
+      <button class="del-sku-btn" data-key="${d._key}" data-nama="${esc(d.nama)}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Hapus</button>
+    </div>`:''}
+  </div>`).join('')+pagerHTML('sku',pg.page,pg.total,pg.count):emp('Belum ada SKU');
+  attachSkuButtons();
+}
+
+function attachSkuButtons(){
+  document.querySelectorAll('.detail-btn').forEach(btn=>{
+    btn.onclick=function(){showDetailSKU(this.getAttribute('data-sku'),this.getAttribute('data-nama'))};
+  });
+  document.querySelectorAll('.edit-sku-btn').forEach(btn=>{
+    btn.onclick=function(){openEditSKU(this.getAttribute('data-key'))};
+  });
   document.querySelectorAll('.del-sku-btn').forEach(btn=>{
-    btn.addEventListener('click',function(){
+    btn.onclick=function(){
       const key=this.getAttribute('data-key');
       const nama=this.getAttribute('data-nama');
       showConfirm('Hapus "'+nama+'"?','Data tidak dapat dikembalikan.',async()=>{
         try{await db.ref('sparepart/'+key).remove();toast('Sparepart dihapus')}catch(e){toast('Gagal','e')}
       });
-    });
+    };
   });
 }
+
+function openEditSKU(key){
+  const d=allS[key];if(!d)return;
+  editSkuKey=key;
+  document.getElementById('e-sk-kode').value=d.sku||'';
+  document.getElementById('e-sk-nama').value=d.nama||'';
+  document.getElementById('e-sk-sat').value=d.sat||'pcs';
+  document.getElementById('e-sk-stok').value=d.stok||0;
+  document.getElementById('e-sk-min').value=d.min||10;
+  const katSel=document.getElementById('e-sk-kat');
+  katSel.innerHTML=allKat.map(k=>`<option value="${k.nama.toLowerCase()}">${k.nama}</option>`).join('');
+  katSel.value=d.kat||'';
+  openM('m-sku-edit');
+}
+
+async function saveEditSKU(){
+  if(!editSkuKey)return;
+  const sku=document.getElementById('e-sk-kode').value.trim().toUpperCase();
+  const nama=document.getElementById('e-sk-nama').value.trim();
+  const kat=document.getElementById('e-sk-kat').value;
+  const sat=document.getElementById('e-sk-sat').value.trim()||'pcs';
+  const stok=parseInt(document.getElementById('e-sk-stok').value,10);
+  const min=parseInt(document.getElementById('e-sk-min').value,10);
+  if(!sku||!nama)return toast('Kode & nama wajib','e');
+  if(sArr().find(v=>v._key!==editSkuKey&&v.sku===sku))return toast('Kode sudah dipakai','e');
+  try{
+    await db.ref('sparepart/'+editSkuKey).update({sku,nama,kat,sat,stok,min});
+    closeM('m-sku-edit');
+    toast('SKU diperbarui');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
 
 function showDetailSKU(sku,nama){
   const skuLow=(sku||'').toLowerCase();
@@ -759,7 +918,7 @@ function renderTrx(){
         <div style="margin-top:8px">
           ${t.approved
             ?`<span style="font-size:11px;font-weight:700;color:#267a4a">✓ Approved ${t.approvedAt||''}</span>`
-            :(isAdmin?`<button onclick="approveItem('${t._key}',true)" style="padding:5px 14px;border-radius:20px;border:1.5px solid #4f7c6e;background:#e8f3f0;color:#3a6358;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Approve</button>`:'<span style="font-size:11px;color:var(--mu)">Menunggu approval</span>')}
+            :(isAdmin?`<button onclick="approveItem('${t._key}')" style="padding:5px 14px;border-radius:20px;border:1.5px solid #4f7c6e;background:#e8f3f0;color:#3a6358;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Approve</button>`:'<span style="font-size:11px;color:var(--mu)">Menunggu approval</span>')}
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0">
@@ -769,43 +928,93 @@ function renderTrx(){
   </div>`).join('')+pagerHTML('trx',pg.page,pg.total,pg.count);
 }
 
+// ══ RENDER KARYAWAN (with Edit button) ══
 function renderKar(){
   const el=document.getElementById('kar-list');const cnt=document.getElementById('kar-cnt');if(!el)return;
   const arr=kArr();if(cnt)cnt.textContent=arr.length;
   const pg=paginate(arr,'kar');
-  el.innerHTML=pg.count?pg.items.map(k=>`<div style="padding:13px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px">
+  el.innerHTML=pg.count?pg.items.map(k=>`<div style="padding:13px 16px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
     <div class="av">${ini(k.nama)}</div>
     <div style="flex:1;min-width:0">
       <div style="font-size:13px;font-weight:700">${k.nama}</div>
-      <div style="font-size:11px;color:var(--mu);margin-top:2px"><span class="b ${jcol[k.jabatan]||'bg'}" style="font-size:10px">${k.jabatan}</span> &bull; @${k.username||k._key}</div>
+      <div style="font-size:11px;color:var(--mu);margin-top:2px"><span class="b ${jcol[k.jabatan]||'bg'}" style="font-size:10px">${k.jabatan}</span> &bull; @${k.username||k._key}${k.hp&&k.hp!=='-'?' &bull; '+k.hp:''}</div>
     </div>
-    <button class="del-kar-btn" data-key="${k._key}" data-nama="${k.nama}" style="font-size:12px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:8px;padding:6px 12px;cursor:pointer;font-family:inherit">Hapus</button>
+    <div style="display:flex;gap:6px">
+      <button class="edit-kar-btn" data-key="${k._key}" style="font-size:11px;font-weight:700;color:#2d5f99;background:var(--bl);border:1.5px solid #b5d0ed;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Edit</button>
+      <button class="del-kar-btn" data-key="${k._key}" data-nama="${esc(k.nama)}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Hapus</button>
+    </div>
   </div>`).join('')+pagerHTML('kar',pg.page,pg.total,pg.count):emp('Belum ada akun');
+  document.querySelectorAll('.edit-kar-btn').forEach(btn=>{
+    btn.onclick=function(){openEditKar(this.getAttribute('data-key'))};
+  });
   document.querySelectorAll('.del-kar-btn').forEach(btn=>{
-    btn.addEventListener('click',function(){
+    btn.onclick=function(){
       const key=this.getAttribute('data-key');
       const nama=this.getAttribute('data-nama');
       showConfirm('Hapus akun "'+nama+'"?','Akun tidak bisa login lagi.',async()=>{
         try{await db.ref('users/'+key).remove();toast('Akun dihapus')}catch(e){toast('Gagal','e')}
       });
-    });
+    };
   });
+}
+
+function openEditKar(key){
+  const k=allK[key];if(!k)return;
+  editKarKey=key;
+  document.getElementById('ek-nama').value=k.nama||'';
+  document.getElementById('ek-user').value=k.username||key;
+  document.getElementById('ek-pass').value='';
+  document.getElementById('ek-jab').value=k.jabatan||'Teknisi';
+  document.getElementById('ek-hp').value=k.hp&&k.hp!=='-'?k.hp:'';
+  openM('m-kar-edit');
+}
+
+async function saveEditKar(){
+  if(!editKarKey)return;
+  const nama=document.getElementById('ek-nama').value.trim();
+  const pass=document.getElementById('ek-pass').value;
+  const jabatan=document.getElementById('ek-jab').value;
+  const hp=document.getElementById('ek-hp').value.trim();
+  if(!nama)return toast('Nama wajib diisi','e');
+  try{
+    const upd={nama,jabatan,hp:hp||'-'};
+    if(pass)upd.password=pass;
+    await db.ref('users/'+editKarKey).update(upd);
+    closeM('m-kar-edit');
+    toast('Akun diperbarui');
+  }catch(e){toast('Gagal: '+e.message,'e')}
 }
 
 function renderDash(){
   const sv=sArr();
-  document.getElementById('d-sku').textContent=sv.length;
-  document.getElementById('d-stok').textContent=sv.reduce((s,v)=>s+(v.stok||0),0).toLocaleString();
-  document.getElementById('d-low').textContent=sv.filter(v=>v.stok<=v.min).length;
-  document.getElementById('d-kar').textContent=kArr().length;
-  document.getElementById('d-alerts').innerHTML=
-    sv.filter(v=>v.stok<=v.min).slice(0,10).map(v=>`<div class="alert ad"><strong>${v.nama}</strong> — kritis: ${v.stok} unit (min: ${v.min})</div>`).join('');
-  const rec=tArr().slice(0,5);
-  document.getElementById('d-recent').innerHTML=rec.length?rec.map(t=>`<div class="hi">
-    <div class="hi-dot" style="background:${t.tipe==='masuk'?'#4f7c6e':'#d95f5f'}"></div>
-    <div class="hinf"><div class="hn">${t.sparepart}</div><div class="hm">${t.karyawan} &bull; ${t.tanggal}</div></div>
-    <div class="hq" style="color:${t.tipe==='masuk'?'#3a6358':'#d95f5f'}">${t.tipe==='masuk'?'+':'-'}${t.qty}</div>
-  </div>`).join(''):emp('Belum ada transaksi');
+  const dSku=document.getElementById('d-sku');if(dSku)dSku.textContent=sv.length;
+  const dStok=document.getElementById('d-stok');if(dStok)dStok.textContent=sv.reduce((s,v)=>s+(v.stok||0),0).toLocaleString();
+  const dLow=document.getElementById('d-low');if(dLow)dLow.textContent=sv.filter(v=>v.stok<=v.min).length;
+  const dKar=document.getElementById('d-kar');if(dKar)dKar.textContent=kArr().length;
+  const da=document.getElementById('d-alerts');
+  if(da){
+    const lows=sv.filter(v=>v.stok<=v.min).slice(0,10);
+    da.innerHTML=lows.length?lows.map(v=>`<div class="alert ad"><strong>${v.nama}</strong> — kritis: ${v.stok} unit (min: ${v.min})</div>`).join(''):'<p class="empty" style="padding:14px">Semua stok aman</p>';
+  }
+  const dr=document.getElementById('d-recent');
+  if(dr){
+    const rec=tArr().slice(0,5);
+    dr.innerHTML=rec.length?rec.map(t=>`<div class="hi">
+      <div class="hi-dot" style="background:${t.tipe==='masuk'?'#4f7c6e':'#d95f5f'}"></div>
+      <div class="hinf"><div class="hn">${t.sparepart}</div><div class="hm">${t.karyawan} &bull; ${t.tanggal}</div></div>
+      <div class="hq" style="color:${t.tipe==='masuk'?'#3a6358':'#d95f5f'}">${t.tipe==='masuk'?'+':'-'}${t.qty}</div>
+    </div>`).join(''):emp('Belum ada transaksi');
+  }
+}
+
+function renderLap(){
+  const ta=tArr();
+  const tm=ta.filter(t=>t.tipe==='masuk').reduce((s,t)=>s+t.qty,0);
+  const tk=ta.filter(t=>t.tipe==='keluar').reduce((s,t)=>s+t.qty,0);
+  const lIn=document.getElementById('l-in');if(lIn)lIn.textContent='+'+tm;
+  const lOut=document.getElementById('l-out');if(lOut)lOut.textContent='-'+tk;
+  const lSt=document.getElementById('l-stok');if(lSt)lSt.textContent=sArr().reduce((s,v)=>s+(v.stok||0),0);
+  const lTr=document.getElementById('l-trx');if(lTr)lTr.textContent=ta.length;
 }
 
 function renderRiw(){
@@ -826,11 +1035,12 @@ function renderRiw(){
   </div>`).join('')+pagerHTML('riw',pg.page,pg.total,pg.count):emp('Tidak ada data');
 }
 
+
 async function doInput(){
   const key=document.getElementById('i-sku').value;
   const qty=parseInt(document.getElementById('i-qty').value)||0;
   const ket=document.getElementById('i-ket').value||'-';
-  if(!key)return toast('Pilih sparepart dulu','e');
+  if(!key)return toast('Pilih sparepart','e');
   if(qty<1)return toast('Jumlah > 0','e');
   const sp=allS[key];
   try{
@@ -868,11 +1078,7 @@ async function addSKU(){
   try{
     await db.ref('sparepart').push({sku:kode,nama,kat,sat,stok,min});
     if(stok>0){
-      await db.ref('transaksi').push({
-        ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),
-        karyawan:currentUser.nama,sparepart:nama,sku:kode,kat,
-        tipe:'masuk',qty:stok,ket:'Stok awal',approved:true,approvedAt:nowDate()+' '+nowTime()
-      });
+      await db.ref('transaksi').push({ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,sparepart:nama,sku:kode,kat,tipe:'masuk',qty:stok,ket:'Stok awal',approved:true,approvedAt:nowDate()+' '+nowTime()});
     }
     ['sk-kode','sk-nama','sk-sat','sk-stok','sk-min'].forEach(id=>document.getElementById(id).value='');
     toast('SKU ditambahkan');
@@ -896,19 +1102,16 @@ async function doKar(){
   }catch(e){toast('Gagal: '+e.message,'e')}
 }
 
-async function approveItem(key,approve){
+async function approveItem(key){
   try{
     const t=allT[key];if(!t)return;
-    await db.ref('transaksi/'+key).update({approved:approve,approvedAt:approve?nowDate()+' '+nowTime():''});
-    // Update stok
-    if(approve){
-      const sp=sArr().find(s=>(s.sku||'').toLowerCase()===(t.sku||'').toLowerCase()||(s.nama||'').toLowerCase()===(t.sparepart||'').toLowerCase());
-      if(sp){
-        const newStok=t.tipe==='masuk'?(sp.stok+t.qty):(sp.stok-t.qty);
-        await db.ref('sparepart/'+sp._key+'/stok').set(Math.max(0,newStok));
-      }
+    await db.ref('transaksi/'+key).update({approved:true,approvedAt:nowDate()+' '+nowTime()});
+    const sp=sArr().find(s=>(s.sku||'').toLowerCase()===(t.sku||'').toLowerCase()||(s.nama||'').toLowerCase()===(t.sparepart||'').toLowerCase());
+    if(sp){
+      const newStok=t.tipe==='masuk'?(sp.stok+t.qty):(sp.stok-t.qty);
+      await db.ref('sparepart/'+sp._key+'/stok').set(Math.max(0,newStok));
     }
-    toast(approve?'Approved':'Dibatalkan');
+    toast('Approved');
   }catch(e){toast('Gagal','e')}
 }
 
@@ -924,7 +1127,7 @@ async function approveAll(){
         const cur=sp.stok||0;
         const newStok=t.tipe==='masuk'?(cur+t.qty):(cur-t.qty);
         await db.ref('sparepart/'+sp._key+'/stok').set(Math.max(0,newStok));
-        sp.stok=newStok; // update local agar perhitungan berikutnya benar
+        sp.stok=newStok;
       }
     }
     toast(pending.length+' transaksi di-approve');
@@ -953,8 +1156,14 @@ document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.
 function go(pg,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.bn').forEach(n=>n.classList.remove('on'));
+  document.querySelectorAll('.sd-item').forEach(n=>n.classList.remove('on'));
   document.getElementById('page-'+pg).classList.add('on');
   if(el)el.classList.add('on');
+  // Sync nav state on both bottom-nav and sidebar
+  document.querySelectorAll(`.bn,.sd-item`).forEach(n=>{
+    const onclick=n.getAttribute('onclick')||'';
+    if(onclick.includes("'"+pg+"'"))n.classList.add('on');
+  });
   window.scrollTo(0,0);
   if(pg==='stok')setTimeout(()=>updateChipArrows('s-chips'),50);
   if(pg==='transaksi')setTimeout(()=>updateChipArrows('trx-tabs'),50);
@@ -973,13 +1182,9 @@ const FIREBASE_CONFIG={
 window.onload=async()=>{
   if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
   db=firebase.database();
-
-  // Buat akun admin default jika belum ada
   db.ref('users/admin').once('value',snap=>{
     if(!snap.val())db.ref('users/admin').set({username:'admin',password:'admin123',nama:'Administrator',jabatan:'Admin',role:'admin',hp:'-',bergabung:nowDate()});
   });
-
-  // Auto-login dari session
   const sess=localStorage.getItem('rrq_session');
   if(sess){
     try{
