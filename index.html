@@ -760,19 +760,24 @@ function renderKatList(){
 }
 async function tambahKat(){
   const input=document.getElementById('kat-baru');
-  if(!input){toast('Field kategori tidak ditemukan','e');return}
+  if(!input){alert('DEBUG: Field kat-baru TIDAK DITEMUKAN di DOM');return}
   const nama=(input.value||'').trim();
-  if(!nama){toast('Nama kategori kosong','e');input.focus();return}
-  if(allKat.find(k=>(k.nama||'').toLowerCase()===nama.toLowerCase())){toast('Kategori sudah ada','e');return}
-  if(!db){toast('Database belum terhubung','e');return}
+  if(!nama){alert('DEBUG: Field kosong. Isi dulu nama kategorinya.');input.focus();return}
+  if(!db){alert('DEBUG: db belum terhubung ke Firebase');return}
+  if(allKat.find(k=>(k.nama||'').toLowerCase()===nama.toLowerCase())){
+    alert('DEBUG: Kategori "'+nama+'" SUDAH ADA di daftar.\n\nDaftar saat ini:\n'+allKat.map(k=>'- '+k.nama).join('\n'));
+    return;
+  }
   try{
-    await db.ref('kategori').push({nama:nama});
+    alert('DEBUG: Akan menyimpan "'+nama+'" ke Firebase...');
+    const result=await db.ref('kategori').push({nama:nama});
+    alert('DEBUG: BERHASIL! Key: '+result.key+'\n\nSekarang harusnya muncul di list.');
     input.value='';
     input.focus();
     toast('Kategori "'+nama+'" ditambahkan');
   }catch(e){
+    alert('DEBUG ERROR: '+e.message+'\n\nKode: '+e.code);
     console.error('tambahKat error:',e);
-    toast('Gagal: '+(e.message||'unknown'),'e');
   }
 }
 
