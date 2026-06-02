@@ -679,8 +679,18 @@ function startApp(){
 function listen(){
   db.ref('kategori').on('value',snap=>{
     allKat=[];
-    if(snap.val())snap.forEach(c=>allKat.push({key:c.key,nama:c.val().nama}));
-    if(!allKat.length){
+    if(snap.val()){
+      snap.forEach(c=>{
+        const data=c.val();
+        // Support 2 format: {nama:'X'} atau langsung 'X' (string)
+        let nama='';
+        if(typeof data==='string')nama=data;
+        else if(data&&typeof data==='object'&&data.nama)nama=String(data.nama);
+        if(nama&&nama.trim())allKat.push({key:c.key,nama:nama.trim()});
+      });
+    }
+    // Hanya seed kategori default kalau Firebase BENAR-BENAR kosong
+    if(snap.val()===null){
       ['Filter','Rem','Transmisi','Kelistrikan','Pelumas','Lainnya'].forEach(n=>db.ref('kategori').push({nama:n}));
     }
     renderKatSelect();renderKatList();updSel();
@@ -743,8 +753,10 @@ function renderKatSelect(){
 }
 function renderKatList(){
   const el=document.getElementById('kat-list');if(!el)return;
-  if(!allKat.length){el.innerHTML='<p style="font-size:13px;color:var(--mu);text-align:center;padding:12px">Belum ada kategori</p>';return}
-  el.innerHTML=allKat.map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f4f6f9">
+  // Filter out kategori invalid
+  const validKat=allKat.filter(k=>k&&k.nama&&k.nama.trim());
+  if(!validKat.length){el.innerHTML='<p style="font-size:13px;color:var(--mu);text-align:center;padding:12px">Belum ada kategori</p>';return}
+  el.innerHTML=validKat.map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f4f6f9">
     <span style="font-size:13px;font-weight:600">${k.nama}</span>
     <button class="del-kat-btn" data-key="${k.key}" data-nama="${esc(k.nama)}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit">Hapus</button>
   </div>`).join('');
