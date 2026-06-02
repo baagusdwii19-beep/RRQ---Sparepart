@@ -766,15 +766,22 @@ async function tambahKat(){
   if(!db){toast('Database belum terhubung','e');return}
   if(allKat.find(k=>(k.nama||'').toLowerCase()===nama.toLowerCase())){toast('Kategori "'+nama+'" sudah ada','e');return}
   try{
-    const result=await db.ref('kategori').push({nama:nama});
-    // Tambahkan langsung ke array lokal supaya langsung tampil tanpa nunggu listener
-    allKat.push({key:result.key,nama:nama});
-    renderKatList();
-    renderKatSelect();
-    updSel();
+    await db.ref('kategori').push({nama:nama});
     input.value='';
     input.focus();
     toast('Kategori "'+nama+'" ditambahkan');
+    // Listener Firebase akan auto-refresh list, tapi kalau belum sempat,
+    // fetch manual sekali untuk pastikan list ter-update
+    setTimeout(async()=>{
+      try{
+        const snap=await db.ref('kategori').once('value');
+        allKat=[];
+        if(snap.val())snap.forEach(c=>allKat.push({key:c.key,nama:c.val().nama}));
+        renderKatList();
+        renderKatSelect();
+        updSel();
+      }catch(e){console.error(e)}
+    },300);
   }catch(e){
     console.error('tambahKat error:',e);
     toast('Gagal: '+(e.message||'unknown'),'e');
