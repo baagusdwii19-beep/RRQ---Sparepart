@@ -127,6 +127,18 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f2f5f9;color:#1e253
 code{background:#f0f3f8;padding:2px 6px;border-radius:5px;font-size:11px;font-family:monospace;color:#3a4a6a;font-weight:700}
 .empty{text-align:center;color:var(--mu);padding:32px 20px;font-size:13px}
 
+/* SEARCHABLE DROPDOWN */
+.sp-picker{position:relative}
+.sp-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:280px;overflow-y:auto;background:#fff;border:1.5px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200}
+.sp-option{padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid #f4f6f9;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sp-option:hover,.sp-option.hl{background:var(--pl)}
+.sp-option:last-child{border-bottom:none}
+.sp-option-info{flex:1;min-width:0}
+.sp-option-nama{font-weight:700;color:var(--text);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp-option-sku{font-size:11px;color:var(--mu);margin-top:2px}
+.sp-option-stok{font-size:13px;font-weight:800;color:var(--p2);flex-shrink:0}
+.sp-option-empty{padding:18px;text-align:center;color:var(--mu);font-size:13px}
+
 /* FILTER BAR with arrow scroll */
 .filter-wrap{position:relative;padding:0 14px;margin-bottom:12px}
 .filter-bar{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-behavior:smooth;padding:2px 0}
@@ -157,29 +169,36 @@ body.is-admin .admin-only{display:inline-flex!important}
 body.is-admin button.admin-only{display:inline-flex!important}
 #toast{position:fixed;bottom:calc(var(--nav-h) + 14px);left:14px;right:14px;padding:13px 18px;border-radius:12px;font-size:13px;font-weight:700;z-index:999;display:none;color:#fff;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.2)}
 
-/* ═══ WEB / DESKTOP LAYOUT — SIDEBAR ═══ */
+/* ═══ WEB / DESKTOP LAYOUT — SIDEBAR FIXED ═══ */
 @media(min-width:1024px){
-  body{background:#eef3f8}
+  body{background:#eef3f8;overflow:hidden}
+  html{overflow:hidden;height:100vh}
   #app{
-    display:grid;
-    grid-template-columns:var(--side-w) minmax(0,1fr);
-    grid-template-rows:56px 1fr;
-    grid-template-areas:"top top" "side main";
+    display:block;
     min-height:100vh;
+    height:100vh;
+    overflow:hidden;
   }
-  .topbar{grid-area:top}
+  .topbar{
+    position:fixed;
+    top:0;left:0;right:0;
+    z-index:60;
+    height:56px;
+  }
   .bottom-nav{display:none!important}
   .sidebar{
     display:flex!important;
-    grid-area:side;
     flex-direction:column;
     background:#fff;
     border-right:1px solid var(--bd);
     padding:18px 12px;
-    position:sticky;
+    position:fixed;
     top:56px;
+    left:0;
+    width:var(--side-w);
     height:calc(100vh - 56px);
     overflow-y:auto;
+    z-index:55;
   }
   .sd-item{
     display:flex;align-items:center;gap:12px;
@@ -196,13 +215,16 @@ body.is-admin button.admin-only{display:inline-flex!important}
   .sd-sep{height:1px;background:var(--bd);margin:12px 0}
   .sd-section{font-size:10px;font-weight:800;color:var(--mu);text-transform:uppercase;padding:8px 14px 6px;letter-spacing:.05em}
 
-  /* MAIN content - full lebar area kanan sidebar, dengan padding lega */
+  /* MAIN content — scroll vertical sendiri */
   .main{
-    grid-area:main;
-    min-height:0;
-    padding:18px 0 24px;
-    min-width:0;
+    position:fixed;
+    top:56px;
+    left:var(--side-w);
+    right:0;
+    bottom:0;
+    overflow-y:auto;
     overflow-x:hidden;
+    padding:18px 0 24px;
   }
   .section-title{padding:6px 32px 14px;font-size:22px}
   .sgrid,.card,.form-section,.alert,.credit{margin-left:32px;margin-right:32px}
@@ -517,7 +539,14 @@ body.is-admin button.admin-only{display:inline-flex!important}
 <div class="mo" id="m-in"><div class="md">
   <div class="md-handle"></div>
   <div class="mt">Input Stok Masuk</div>
-  <div class="fg"><label class="fl">Sparepart</label><select class="fs" id="i-sku"></select></div>
+  <div class="fg">
+    <label class="fl">Sparepart</label>
+    <div class="sp-picker">
+      <input class="fi sp-search" id="i-sku-search" placeholder="Ketik nama atau kode SKU..." autocomplete="off" oninput="filterSpDropdown('i')" onfocus="showSpDropdown('i')">
+      <input type="hidden" id="i-sku">
+      <div class="sp-dropdown" id="i-sku-dropdown" style="display:none"></div>
+    </div>
+  </div>
   <div class="fg"><label class="fl">Jumlah</label><input class="fi" type="number" id="i-qty" min="1"></div>
   <div class="fg"><label class="fl">Keterangan</label><input class="fi" id="i-ket" placeholder="Supplier / PO..."></div>
   <div class="mf">
@@ -529,7 +558,14 @@ body.is-admin button.admin-only{display:inline-flex!important}
 <div class="mo" id="m-out"><div class="md">
   <div class="md-handle"></div>
   <div class="mt">Potong Stok Keluar</div>
-  <div class="fg"><label class="fl">Sparepart</label><select class="fs" id="o-sku" onchange="updOutInfo()"></select></div>
+  <div class="fg">
+    <label class="fl">Sparepart</label>
+    <div class="sp-picker">
+      <input class="fi sp-search" id="o-sku-search" placeholder="Ketik nama atau kode SKU..." autocomplete="off" oninput="filterSpDropdown('o')" onfocus="showSpDropdown('o')">
+      <input type="hidden" id="o-sku">
+      <div class="sp-dropdown" id="o-sku-dropdown" style="display:none"></div>
+    </div>
+  </div>
   <div id="o-info" style="font-size:12px;color:var(--mu);margin:-8px 0 12px;font-weight:600"></div>
   <div class="fg"><label class="fl">Jumlah</label><input class="fi" type="number" id="o-qty" min="1"></div>
   <div class="fg"><label class="fl">Keterangan</label><input class="fi" id="o-ket"></div>
@@ -682,6 +718,8 @@ function setPage(key,page){
   if(key==='sku')renderSKU();
   if(key==='kar')renderKar();
   if(key==='riw')renderRiw();
+  const mainEl=document.querySelector('.main');
+  if(mainEl)mainEl.scrollTo({top:0,behavior:'smooth'});
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -763,8 +801,8 @@ function showScreen(s){
 
 
 function updSel(){
-  const so='<option value="">-- Pilih --</option>'+sArr().map(v=>`<option value="${v._key}">${v.sku} — ${v.nama} (${v.stok} ${v.sat})</option>`).join('');
-  ['i-sku','o-sku'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=so});
+  // Render dropdown searchable untuk Input & Potong stok
+  ['i','o'].forEach(prefix=>renderSpDropdown(prefix,''));
   updOutInfo();
   const ch=document.getElementById('s-chips');
   if(ch){
@@ -778,12 +816,92 @@ function updSel(){
   }
 }
 
+// ══ SEARCHABLE DROPDOWN ══
+function renderSpDropdown(prefix,query){
+  const dd=document.getElementById(prefix+'-sku-dropdown');
+  if(!dd)return;
+  const q=(query||'').toLowerCase().trim();
+  let items=sArr();
+  if(q){
+    items=items.filter(v=>
+      (v.nama||'').toLowerCase().includes(q)||
+      (v.sku||'').toLowerCase().includes(q)||
+      (v.kat||'').toLowerCase().includes(q)
+    );
+  }
+  // Sort: stok > 0 dulu (untuk potong), alphabetical
+  items.sort((a,b)=>(a.nama||'').localeCompare(b.nama||''));
+  if(!items.length){
+    dd.innerHTML='<div class="sp-option-empty">Tidak ada sparepart cocok</div>';
+    return;
+  }
+  dd.innerHTML=items.slice(0,50).map(v=>{
+    const col=scol(v.stok,v.min);
+    return`<div class="sp-option" data-key="${v._key}" data-display="${esc(v.sku)} — ${esc(v.nama)}">
+      <div class="sp-option-info">
+        <div class="sp-option-nama">${v.nama}</div>
+        <div class="sp-option-sku"><code>${v.sku}</code> &bull; ${cap(v.kat||'')}</div>
+      </div>
+      <div class="sp-option-stok" style="color:${col}">${v.stok} ${v.sat||''}</div>
+    </div>`;
+  }).join('');
+  // Attach click handlers
+  dd.querySelectorAll('.sp-option').forEach(opt=>{
+    opt.onclick=function(){
+      const key=this.getAttribute('data-key');
+      const display=this.getAttribute('data-display');
+      document.getElementById(prefix+'-sku').value=key;
+      document.getElementById(prefix+'-sku-search').value=display;
+      dd.style.display='none';
+      if(prefix==='o')updOutInfo();
+    };
+  });
+}
+
+function showSpDropdown(prefix){
+  const dd=document.getElementById(prefix+'-sku-dropdown');
+  if(!dd)return;
+  const search=document.getElementById(prefix+'-sku-search');
+  renderSpDropdown(prefix,search?search.value:'');
+  dd.style.display='block';
+}
+
+function filterSpDropdown(prefix){
+  const search=document.getElementById(prefix+'-sku-search');
+  renderSpDropdown(prefix,search.value);
+  document.getElementById(prefix+'-sku-dropdown').style.display='block';
+  // Clear selected key if text changed manually
+  const selKey=document.getElementById(prefix+'-sku').value;
+  if(selKey){
+    const sp=allS[selKey];
+    if(sp){
+      const expected=sp.sku+' — '+sp.nama;
+      if(search.value!==expected){
+        document.getElementById(prefix+'-sku').value='';
+        if(prefix==='o')updOutInfo();
+      }
+    }
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click',function(e){
+  ['i','o'].forEach(prefix=>{
+    const picker=document.querySelector(`#${prefix}-sku-search`);
+    const dd=document.getElementById(prefix+'-sku-dropdown');
+    if(!picker||!dd)return;
+    if(!picker.contains(e.target)&&!dd.contains(e.target)){
+      dd.style.display='none';
+    }
+  });
+});
+
 function updOutInfo(){
   const key=document.getElementById('o-sku').value;
   const sp=allS[key];
   const info=document.getElementById('o-info');
   const submit=document.getElementById('o-submit');
-  info.textContent=sp?'Stok tersedia: '+sp.stok+' '+sp.sat:'';
+  if(info)info.textContent=sp?'Stok tersedia: '+sp.stok+' '+sp.sat:'';
   if(submit)submit.disabled=!sp||sp.stok<=0;
 }
 
@@ -1295,7 +1413,10 @@ async function doInput(){
   try{
     await db.ref('transaksi').push({ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,sparepart:sp.nama,sku:sp.sku,kat:sp.kat,tipe:'masuk',qty,ket,approved:false});
     toast('Disimpan, menunggu approval');closeM('m-in');
-    document.getElementById('i-qty').value='';document.getElementById('i-ket').value='';
+    document.getElementById('i-qty').value='';
+    document.getElementById('i-ket').value='';
+    document.getElementById('i-sku').value='';
+    document.getElementById('i-sku-search').value='';
   }catch(e){toast('Gagal: '+e.message,'e')}
 }
 
@@ -1311,7 +1432,10 @@ async function doOutput(){
   try{
     await db.ref('transaksi').push({ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,sparepart:sp.nama,sku:sp.sku,kat:sp.kat,tipe:'keluar',qty,ket,approved:false});
     toast('Disimpan, menunggu approval');closeM('m-out');
-    document.getElementById('o-qty').value='';document.getElementById('o-ket').value='';
+    document.getElementById('o-qty').value='';
+    document.getElementById('o-ket').value='';
+    document.getElementById('o-sku').value='';
+    document.getElementById('o-sku-search').value='';
   }catch(e){toast('Gagal: '+e.message,'e')}
 }
 
@@ -1599,7 +1723,25 @@ function onRestoreFile(input){
   input.value='';
 }
 
-function openM(id){document.getElementById(id).classList.add('open')}
+function openM(id){
+  document.getElementById(id).classList.add('open');
+  // Reset & refresh searchable dropdown saat modal Input/Potong dibuka
+  if(id==='m-in'){
+    document.getElementById('i-sku').value='';
+    document.getElementById('i-sku-search').value='';
+    document.getElementById('i-sku-dropdown').style.display='none';
+    renderSpDropdown('i','');
+    setTimeout(()=>document.getElementById('i-sku-search').focus(),200);
+  }
+  if(id==='m-out'){
+    document.getElementById('o-sku').value='';
+    document.getElementById('o-sku-search').value='';
+    document.getElementById('o-sku-dropdown').style.display='none';
+    renderSpDropdown('o','');
+    updOutInfo();
+    setTimeout(()=>document.getElementById('o-sku-search').focus(),200);
+  }
+}
 function closeM(id){document.getElementById(id).classList.remove('open')}
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
 
@@ -1613,6 +1755,9 @@ function go(pg,el){
     const onclick=n.getAttribute('onclick')||'';
     if(onclick.includes("'"+pg+"'"))n.classList.add('on');
   });
+  // Scroll ke atas — di desktop scroll element .main, di mobile scroll window
+  const mainEl=document.querySelector('.main');
+  if(mainEl)mainEl.scrollTop=0;
   window.scrollTo(0,0);
   if(pg==='stok'){setTimeout(()=>updateChipArrows('s-chips'),50);setTimeout(()=>updateChipArrows('s-chips'),300);setTimeout(()=>updateChipArrows('s-chips'),800)}
   if(pg==='transaksi'){setTimeout(()=>updateChipArrows('trx-tabs'),50);setTimeout(()=>updateChipArrows('trx-tabs'),300);setTimeout(()=>updateChipArrows('trx-tabs'),800)}
