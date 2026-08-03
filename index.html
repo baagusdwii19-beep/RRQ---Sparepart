@@ -214,6 +214,10 @@ body.is-admin button.admin-only{display:inline-flex!important}
   .sd-item.has-dot .sd-dot{display:block}
   .sd-sep{height:1px;background:var(--bd);margin:12px 0}
   .sd-section{font-size:10px;font-weight:800;color:var(--mu);text-transform:uppercase;padding:8px 14px 6px;letter-spacing:.05em}
+  .sd-caret{font-size:16px;transition:transform .2s;color:var(--mu)}
+  .sd-caret.open{transform:rotate(90deg)}
+  .sd-sub-item{padding-left:32px!important;font-size:13px!important}
+  .sd-sub-item .sd-icon{font-size:15px}
 
   /* MAIN content — scroll vertical sendiri */
   .main{
@@ -286,9 +290,40 @@ body.is-admin button.admin-only{display:inline-flex!important}
   <aside class="sidebar">
     <div class="sd-section">Menu Utama</div>
     <div class="sd-item on" onclick="go('dashboard',this)"><span class="sd-icon">🏠</span><span class="sd-label">Dashboard</span></div>
-    <div class="sd-item" onclick="go('stok',this)" id="sd-stok"><span class="sd-icon">📦</span><span class="sd-label">Stok</span><span class="sd-dot"></span></div>
-    <div class="sd-item" onclick="go('transaksi',this)"><span class="sd-icon">🔄</span><span class="sd-label">Transaksi</span></div>
-    <div class="sd-item" onclick="go('sku',this)"><span class="sd-icon">🏷</span><span class="sd-label">Kelola SKU</span></div>
+    <div class="sd-item" onclick="toggleStokGroup()" id="sd-stok-group">
+      <span class="sd-icon">📦</span><span class="sd-label">Stok</span>
+      <span class="sd-caret" id="sd-stok-caret">›</span>
+    </div>
+    <div id="sd-stok-sub" style="display:none">
+      <div class="sd-item sd-sub-item" onclick="go('stok',this)" id="sd-stok"><span class="sd-icon">🔩</span><span class="sd-label">Stok Sparepart</span><span class="sd-dot"></span></div>
+      <div class="sd-item sd-sub-item" onclick="go('rusak',this)"><span class="sd-icon">🛠</span><span class="sd-label">Stok Barang Rusak</span></div>
+    </div>
+    <div class="sd-item" onclick="toggleMutasiGroup()" id="sd-mutasi-group">
+      <span class="sd-icon">🔄</span><span class="sd-label">Mutasi</span>
+      <span class="sd-caret" id="sd-mutasi-caret">›</span>
+    </div>
+    <div id="sd-mutasi-sub" style="display:none">
+      <div class="sd-item sd-sub-item" onclick="go('transaksi',this)"><span class="sd-icon">🔩</span><span class="sd-label">Mutasi Sparepart</span></div>
+      <div class="sd-item sd-sub-item" onclick="go('trxrusak',this)"><span class="sd-icon">🛠</span><span class="sd-label">Mutasi Barang Rusak</span></div>
+    </div>
+    <div class="sd-item" onclick="go('rekondisi',this)"><span class="sd-icon">🔧</span><span class="sd-label">Rekondisi</span></div>
+    <div class="sd-item" onclick="toggleQcGroup()" id="sd-qc-group">
+      <span class="sd-icon">🔍</span><span class="sd-label">Laporan QC</span>
+      <span class="sd-caret" id="sd-qc-caret">›</span>
+    </div>
+    <div id="sd-qc-sub" style="display:none">
+      <div class="sd-item sd-sub-item" onclick="go('qclog',this)"><span class="sd-icon">📋</span><span class="sd-label">Log QC</span></div>
+      <div class="sd-item sd-sub-item" onclick="go('qcdash',this)"><span class="sd-icon">📊</span><span class="sd-label">Dashboard QC</span></div>
+      <div class="sd-item sd-sub-item" onclick="go('qcbatch',this)"><span class="sd-icon">📥</span><span class="sd-label">Data Batch</span></div>
+    </div>
+    <div class="sd-item" onclick="toggleMasterGroup()" id="sd-master-group">
+      <span class="sd-icon">🗂</span><span class="sd-label">Master Data</span>
+      <span class="sd-caret" id="sd-master-caret">›</span>
+    </div>
+    <div id="sd-master-sub" style="display:none">
+      <div class="sd-item sd-sub-item" onclick="go('sku',this)"><span class="sd-icon">🏷</span><span class="sd-label">Kelola SKU</span></div>
+      <div class="sd-item sd-sub-item" onclick="go('jeniskerusakan',this)"><span class="sd-icon">🔨</span><span class="sd-label">Jenis Kerusakan</span></div>
+    </div>
     <div class="sd-sep"></div>
     <div class="sd-section">Manajemen</div>
     <div class="sd-item admin-only" onclick="go('karyawan',this)" style="display:none"><span class="sd-icon">👥</span><span class="sd-label">Kelola Akun</span></div>
@@ -336,7 +371,7 @@ body.is-admin button.admin-only{display:inline-flex!important}
     <!-- TRANSAKSI -->
     <div class="page" id="page-transaksi">
       <div class="ch" style="padding:14px 14px 0;border:none;background:transparent">
-        <span class="section-title" style="padding:0">Transaksi</span>
+        <span class="section-title" style="padding:0">Mutasi Sparepart</span>
         <div style="display:flex;gap:7px">
           <button class="btn bp btn-sm" onclick="openM('m-in')">Input</button>
           <button class="btn br btn-sm" onclick="openM('m-out')">Potong</button>
@@ -472,6 +507,171 @@ body.is-admin button.admin-only{display:inline-flex!important}
           <button class="btn br btn-full" onclick="document.getElementById('restore-file').click()">📤 Restore dari File JSON</button>
         </div>
       </div>
+      <div class="card">
+        <div class="ch"><span class="ct">📥 Import Data Spreadsheet</span></div>
+        <div class="cb">
+          <div style="font-size:13px;line-height:1.6;color:#4a5568;margin-bottom:14px">
+            Import data dari file <strong>2026 Laporan Batch per Produk</strong>: <strong id="seed-def">0</strong> jenis kerusakan, <strong id="seed-batch">0</strong> data batch, <strong id="seed-qc">0</strong> catatan QC.
+            <br>Data yang sudah ada tidak dihapus — hanya ditambahkan.
+          </div>
+          <button class="btn bp btn-full" onclick="importSeedData()">📥 Import Sekarang</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BARANG RUSAK (Stok-style, view-only) -->
+    <div class="page" id="page-rusak">
+      <div class="ch" style="padding:14px 14px 0;border:none;background:transparent">
+        <span class="section-title" style="padding:0">Stok Barang Rusak</span>
+      </div>
+      <div style="height:12px"></div>
+      <div class="search-wrap"><input class="si" id="rusak-q" placeholder="Cari SKU grup / jenis kerusakan..." oninput="onRusakSearch()"></div>
+      <div class="filter-wrap" id="rusak-chips-wrap">
+        <button class="filter-arrow filter-arrow-left" onclick="scrollChips('rusak-chips',-1)">‹</button>
+        <div class="filter-bar" id="rusak-chips"></div>
+        <button class="filter-arrow filter-arrow-right" onclick="scrollChips('rusak-chips',1)">›</button>
+      </div>
+      <div class="card">
+        <div class="ch">
+          <span class="ct">Daftar Barang Rusak</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="b bi" id="rusak-cnt">0 Item</span>
+            <button class="collapse-btn" onclick="toggleC('rusak-list',this)">Tutup</button>
+          </div>
+        </div>
+        <div id="rusak-list" class="collapsible"></div>
+      </div>
+    </div>
+
+    <!-- REKONDISI (Transaksi-style) -->
+    <div class="page" id="page-rekondisi">
+      <div class="ch" style="padding:14px 14px 0;border:none;background:transparent">
+        <span class="section-title" style="padding:0">Rekondisi</span>
+        <button class="btn bp btn-sm" onclick="openM('m-rekondisi')">+ Input Rekondisi</button>
+      </div>
+      <div style="height:12px"></div>
+      <div class="search-wrap"><input class="si" id="rekon-q" placeholder="Cari rekondisi..." oninput="onRekonSearch()"></div>
+      <div class="filter-wrap" id="rekon-tabs-wrap">
+        <button class="filter-arrow filter-arrow-left" onclick="scrollChips('rekon-tabs',-1)">‹</button>
+        <div class="filter-bar" id="rekon-tabs"></div>
+        <button class="filter-arrow filter-arrow-right" onclick="scrollChips('rekon-tabs',1)">›</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--mu)" id="rekon-cnt">0 rekondisi</span>
+        <button class="btn bp btn-sm admin-only" id="rekon-approve-all-btn" onclick="approveAllRekon()" style="display:none">Approve Semua</button>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Daftar Rekondisi</span><button class="collapse-btn" onclick="toggleC('rekon-list',this)">Tutup</button></div>
+        <div id="rekon-list" class="collapsible"></div>
+      </div>
+    </div>
+
+    <!-- TRANSAKSI BARANG RUSAK (Transaksi-style) -->
+    <div class="page" id="page-trxrusak">
+      <div class="ch" style="padding:14px 14px 0;border:none;background:transparent">
+        <span class="section-title" style="padding:0">Mutasi Barang Rusak</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn bp btn-sm" onclick="openM('m-rusak-in')">Input</button>
+          <button class="btn br btn-sm" onclick="openM('m-rusak-out')">Potong</button>
+        </div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="search-wrap"><input class="si" id="trxrusak-q" placeholder="Cari transaksi..." oninput="onTrxRusakSearch()"></div>
+      <div class="filter-wrap" id="trxrusak-tabs-wrap">
+        <button class="filter-arrow filter-arrow-left" onclick="scrollChips('trxrusak-tabs',-1)">‹</button>
+        <div class="filter-bar" id="trxrusak-tabs"></div>
+        <button class="filter-arrow filter-arrow-right" onclick="scrollChips('trxrusak-tabs',1)">›</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--mu)" id="trxrusak-cnt">0 transaksi</span>
+        <button class="btn bp btn-sm admin-only" id="trxrusak-approve-all-btn" onclick="approveAllTrxRusak()" style="display:none">Approve Semua</button>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Daftar Transaksi</span><button class="collapse-btn" onclick="toggleC('trxrusak-list',this)">Tutup</button></div>
+        <div id="trxrusak-list" class="collapsible"></div>
+      </div>
+    </div>
+
+    <!-- JENIS KERUSAKAN (Master) -->
+    <div class="page" id="page-jeniskerusakan">
+      <div class="section-title">Jenis Kerusakan</div>
+      <div class="card">
+        <div class="ch"><span class="ct">Tambah Jenis Kerusakan</span></div>
+        <div class="cb">
+          <div style="font-size:13px;color:#4a5568;margin-bottom:12px;line-height:1.6">Daftar jenis kerusakan ini dipakai saat menambah item di <strong>Stok Barang Rusak</strong>. Isi sekali di sini, nanti tinggal pilih.</div>
+          <div style="display:flex;gap:8px">
+            <input class="fi" id="jk-baru" placeholder="Contoh: ROLL, BODY SET, KASAR / DINAMO..." style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();tambahJenisKerusakan()}">
+            <button type="button" class="btn bp btn-sm" onclick="tambahJenisKerusakan()">Tambah</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Daftar Jenis Kerusakan</span><span class="b bi" id="jk-cnt">0</span></div>
+        <div id="jk-list"></div>
+      </div>
+    </div>
+
+    <!-- LOG QC -->
+    <div class="page" id="page-qclog">
+      <div class="ch" style="padding:14px 14px 0;border:none;background:transparent">
+        <span class="section-title" style="padding:0">Log QC</span>
+        <button class="btn bp btn-sm" onclick="document.getElementById('qc-edit-key').value='';openM('m-qc')">+ Input QC</button>
+      </div>
+      <div style="height:12px"></div>
+      <div class="search-wrap"><input class="si" id="qc-q" placeholder="Cari batch / produk / kerusakan..." oninput="onQcSearch()"></div>
+      <div class="filter-wrap" id="qc-chips-wrap">
+        <button class="filter-arrow filter-arrow-left" onclick="scrollChips('qc-chips',-1)">‹</button>
+        <div class="filter-bar" id="qc-chips"></div>
+        <button class="filter-arrow filter-arrow-right" onclick="scrollChips('qc-chips',1)">›</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--mu)" id="qc-cnt">0 catatan</span>
+        <button class="btn bo btn-sm" onclick="exportQcExcel()">Export</button>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Catatan QC</span><button class="collapse-btn" onclick="toggleC('qc-list',this)">Tutup</button></div>
+        <div id="qc-list" class="collapsible"></div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD QC -->
+    <div class="page" id="page-qcdash">
+      <div class="section-title">Dashboard QC</div>
+      <div class="sgrid" style="margin-bottom:4px">
+        <div class="sc"><div class="sc-label">Total QC</div><div class="sc-val" id="qcd-totalqc">0</div></div>
+        <div class="sc"><div class="sc-label">Total Rusak</div><div class="sc-val" id="qcd-totalrusak" style="color:#d95f5f">0</div></div>
+        <div class="sc"><div class="sc-label">% Rusak</div><div class="sc-val" id="qcd-persen" style="color:#d4924a">0%</div></div>
+        <div class="sc"><div class="sc-label">Jml Catatan</div><div class="sc-val" id="qcd-count">0</div></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Rusak per Batch</span></div>
+        <div id="qcd-batch"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Rusak per Produk</span></div>
+        <div id="qcd-produk"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Rusak per Jenis Kerusakan</span></div>
+        <div id="qcd-jenis"></div>
+      </div>
+    </div>
+
+    <!-- DATA BATCH -->
+    <div class="page" id="page-qcbatch">
+      <div class="ch" style="padding:14px 14px 0;border:none;background:transparent">
+        <span class="section-title" style="padding:0">Data Batch</span>
+        <button class="btn bp btn-sm" onclick="document.getElementById('bt-edit-key').value='';openM('m-batch')">+ Kedatangan Batch</button>
+      </div>
+      <div style="height:12px"></div>
+      <div class="search-wrap"><input class="si" id="bt-q" placeholder="Cari batch / produk..." oninput="onBatchSearch()"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--mu)" id="bt-cnt">0 batch</span>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Daftar Batch</span><button class="collapse-btn" onclick="toggleC('bt-list',this)">Tutup</button></div>
+        <div id="bt-list" class="collapsible"></div>
+      </div>
     </div>
 
     <!-- RIWAYAT -->
@@ -491,7 +691,7 @@ body.is-admin button.admin-only{display:inline-flex!important}
   <div class="bottom-nav">
     <div class="bn on" onclick="go('dashboard',this)"><div class="bn-bar"></div><div class="bn-icon">🏠</div><div class="bn-label">Dashboard</div></div>
     <div class="bn" onclick="go('stok',this)"><div class="bn-bar"></div><div class="bn-dot" id="bn-dot"></div><div class="bn-icon">📦</div><div class="bn-label">Stok</div></div>
-    <div class="bn" onclick="go('transaksi',this)"><div class="bn-bar"></div><div class="bn-icon">🔄</div><div class="bn-label">Transaksi</div></div>
+    <div class="bn" onclick="go('transaksi',this)"><div class="bn-bar"></div><div class="bn-icon">🔄</div><div class="bn-label">Mutasi</div></div>
     <div class="bn" onclick="go('sku',this)"><div class="bn-bar"></div><div class="bn-icon">🏷</div><div class="bn-label">SKU</div></div>
     <div class="bn" onclick="showMore()"><div class="bn-bar"></div><div class="bn-icon">☰</div><div class="bn-label">Lainnya</div></div>
   </div>
@@ -530,6 +730,21 @@ body.is-admin button.admin-only{display:inline-flex!important}
 <div class="mo" id="m-more"><div class="md">
   <div class="md-handle"></div>
   <div class="mt">Menu Lainnya</div>
+  <div style="font-size:11px;font-weight:800;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px;padding-left:2px">Stok</div>
+  <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px;margin-bottom:8px" onclick="goMore('stok')">🔩  Stok Sparepart</button>
+  <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px" onclick="goMore('rusak')">🛠  Stok Barang Rusak</button>
+  <div style="font-size:11px;font-weight:800;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 6px;padding-left:2px">Mutasi</div>
+  <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px;margin-bottom:8px" onclick="goMore('transaksi')">🔩  Mutasi Sparepart</button>
+  <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px" onclick="goMore('trxrusak')">🛠  Mutasi Barang Rusak</button>
+  <button class="btn bo btn-full" style="justify-content:flex-start;margin-top:12px" onclick="goMore('rekondisi')">🔧  Rekondisi</button>
+  <div style="font-size:11px;font-weight:800;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 6px;padding-left:2px">Laporan QC</div>
+  <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px;margin-bottom:8px" onclick="goMore('qclog')">📋  Log QC</button>
+  <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px;margin-bottom:8px" onclick="goMore('qcdash')">📊  Dashboard QC</button>
+  <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px" onclick="goMore('qcbatch')">📥  Data Batch</button>
+  <div style="font-size:11px;font-weight:800;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 6px;padding-left:2px">Master Data</div>
+  <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px;margin-bottom:8px" onclick="goMore('sku')">🏷  Kelola SKU</button>
+  <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px" onclick="goMore('jeniskerusakan')">🔨  Jenis Kerusakan</button>
+  <hr style="border:none;border-top:1px solid var(--bd);margin:12px 0">
   <button class="btn bo btn-full admin-only" style="justify-content:flex-start" onclick="goMore('karyawan')">👥  Kelola Akun</button>
   <button class="btn bo btn-full" style="justify-content:flex-start" onclick="goMore('laporan')">📊  Laporan</button>
   <button class="btn bo btn-full" style="justify-content:flex-start" onclick="goMore('riwayat')">📋  Riwayat</button>
@@ -622,11 +837,148 @@ body.is-admin button.admin-only{display:inline-flex!important}
   </div>
 </div></div>
 
+<!-- TAMBAH ITEM BARANG RUSAK -->
+<div class="mo" id="m-rusak-add"><div class="md">
+  <div class="md-handle"></div>
+  <div class="mt">Tambah Item Barang Rusak</div>
+  <div class="fg"><label class="fl">SKU Grup (dari Kategori)</label><input class="fi" id="rg-nama" list="rusak-grup-list" placeholder="Ketik / pilih kategori..." autocomplete="off"></div>
+  <div class="fg"><label class="fl">Jenis Kerusakan</label><input class="fi" id="rg-jenis" list="rusak-jenis-list" placeholder="Ketik / pilih jenis kerusakan..." autocomplete="off"></div>
+  <div class="fg"><label class="fl">Batch</label><input class="fi" id="rg-batch" list="rusak-batch-list" placeholder="Contoh: 2507/2509" autocomplete="off"></div>
+  <datalist id="rusak-grup-list"></datalist>
+  <datalist id="rusak-jenis-list"></datalist>
+  <datalist id="rusak-batch-list"></datalist>
+  <div class="fg"><label class="fl">Qty Awal</label><input class="fi" type="number" id="rg-qty" placeholder="0" min="0"></div>
+  <div style="font-size:11px;color:var(--mu);margin:-6px 0 12px">💡 SKU Grup diambil dari daftar Kategori (Kelola SKU). Jenis kerusakan baru otomatis masuk ke master.</div>
+  <div class="mf">
+    <button class="btn bp btn-full" onclick="saveAddRusakItem()">Simpan</button>
+    <button class="btn bo btn-full" onclick="closeM('m-rusak-add')">Batal</button>
+  </div>
+</div></div>
+
+<!-- EDIT ITEM BARANG RUSAK -->
+<div class="mo" id="m-rusak-edit"><div class="md">
+  <div class="md-handle"></div>
+  <div class="mt">Edit Item Barang Rusak</div>
+  <div class="fg"><label class="fl">Nama SKU Grup</label><input class="fi" id="re-nama" list="rusak-grup-list" autocomplete="off"></div>
+  <div class="fg"><label class="fl">Jenis Kerusakan</label><input class="fi" id="re-jenis" list="rusak-jenis-list" autocomplete="off"></div>
+  <div class="fg"><label class="fl">Batch</label><input class="fi" id="re-batch" list="rusak-batch-list" autocomplete="off"></div>
+  <div class="fg"><label class="fl">Qty</label><input class="fi" type="number" id="re-qty" min="0"></div>
+  <div class="mf">
+    <button class="btn bp btn-full" onclick="saveEditRusakItem()">Simpan</button>
+    <button class="btn bo btn-full" onclick="closeM('m-rusak-edit')">Batal</button>
+  </div>
+</div></div>
+
+<!-- DETAIL ITEM BARANG RUSAK -->
+<div class="mo" id="m-rusak-detail"><div class="md" style="max-height:85vh">
+  <div class="md-handle"></div>
+  <div style="font-size:11px;color:var(--mu);font-weight:700;text-transform:uppercase">Detail Barang Rusak</div>
+  <div class="mt" id="rusak-detail-title" style="margin-top:4px;margin-bottom:14px">-</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+    <div style="background:#fff;border:1px solid var(--bd);border-radius:10px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--mu);font-weight:700">STOK SAAT INI</div><div style="font-size:20px;font-weight:900;margin-top:4px" id="rusak-detail-stok">0</div></div>
+    <div style="background:#fdf0f0;border:1px solid #f0c0c0;border-radius:10px;padding:10px;text-align:center"><div style="font-size:10px;color:#b83c3c;font-weight:700">TOTAL DIREKONDISI</div><div style="font-size:20px;font-weight:900;color:#d95f5f;margin-top:4px" id="rusak-detail-rekon">0</div></div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-size:13px;font-weight:700">Riwayat Rekondisi</div><span class="b bi" id="rusak-detail-cnt">0</span></div>
+  <div style="background:#fff;border:1px solid var(--bd);border-radius:12px;max-height:280px;overflow-y:auto" id="rusak-detail-list"></div>
+  <div class="mf"><button class="btn bo btn-full" onclick="closeM('m-rusak-detail')">Tutup</button></div>
+</div></div>
+
+<!-- INPUT REKONDISI -->
+<div class="mo" id="m-rekondisi"><div class="md">
+  <div class="md-handle"></div>
+  <div class="mt">Input Rekondisi</div>
+  <div class="fg"><label class="fl">SKU Grup (dari Kategori)</label><input class="fi" id="rk-grup" list="rusak-grup-list" placeholder="Ketik / pilih kategori..." autocomplete="off" oninput="matchRekonItem()"></div>
+  <div class="fg"><label class="fl">Jenis Kerusakan</label><input class="fi" id="rk-jenis" list="rusak-jenis-list" placeholder="Ketik / pilih jenis kerusakan..." autocomplete="off" oninput="matchRekonItem()"></div>
+  <div class="fg"><label class="fl">Batch</label><input class="fi" id="rk-batch" list="rusak-batch-list" placeholder="Ketik / pilih batch..." autocomplete="off" oninput="matchRekonItem()"></div>
+  <input type="hidden" id="rk-item-key">
+  <div id="rk-info" style="font-size:12px;margin:0 0 12px"></div>
+  <div class="fg"><label class="fl">Jumlah Direkondisi</label><input class="fi" type="number" id="rk-qty" min="1"></div>
+  <div class="fg"><label class="fl">Nama Teknisi / Keterangan</label><input class="fi" id="rk-ket" placeholder="Nama teknisi / catatan..."></div>
+  <div class="mf">
+    <button class="btn bp btn-full" id="rk-submit" onclick="doRekondisi()">Simpan</button>
+    <button class="btn bo btn-full" onclick="closeM('m-rekondisi')">Batal</button>
+  </div>
+</div></div>
+
+<!-- INPUT STOK BARANG RUSAK MASUK -->
+<div class="mo" id="m-rusak-in"><div class="md">
+  <div class="md-handle"></div>
+  <div class="mt">Input Barang Rusak Masuk</div>
+  <div class="fg"><label class="fl">SKU Grup (dari Kategori)</label><input class="fi" id="ri-grup" list="rusak-grup-list" placeholder="Ketik / pilih kategori..." autocomplete="off"></div>
+  <div class="fg"><label class="fl">Jenis Kerusakan</label><input class="fi" id="ri-jenis" list="rusak-jenis-list" placeholder="Ketik / pilih jenis kerusakan..." autocomplete="off"></div>
+  <div class="fg"><label class="fl">Batch</label><input class="fi" id="ri-batch" list="rusak-batch-list" placeholder="Contoh: 2507/2509" autocomplete="off"></div>
+  <div class="fg"><label class="fl">Jumlah Masuk</label><input class="fi" type="number" id="ri-qty" min="1"></div>
+  <div class="fg"><label class="fl">Keterangan</label><input class="fi" id="ri-ket" placeholder="Catatan..."></div>
+  <div style="font-size:11px;color:var(--mu);margin:-6px 0 12px">💡 Kalau kombinasi belum ada, item baru otomatis dibuat saat di-approve.</div>
+  <div class="mf">
+    <button class="btn bp btn-full" onclick="doRusakIn()">Simpan</button>
+    <button class="btn bo btn-full" onclick="closeM('m-rusak-in')">Batal</button>
+  </div>
+</div></div>
+
+<!-- POTONG STOK BARANG RUSAK KELUAR -->
+<div class="mo" id="m-rusak-out"><div class="md">
+  <div class="md-handle"></div>
+  <div class="mt">Potong Barang Rusak Keluar</div>
+  <div class="fg"><label class="fl">SKU Grup (dari Kategori)</label><input class="fi" id="ro-grup" list="rusak-grup-list" placeholder="Ketik / pilih kategori..." autocomplete="off" oninput="matchRusakOutItem()"></div>
+  <div class="fg"><label class="fl">Jenis Kerusakan</label><input class="fi" id="ro-jenis" list="rusak-jenis-list" placeholder="Ketik / pilih jenis kerusakan..." autocomplete="off" oninput="matchRusakOutItem()"></div>
+  <div class="fg"><label class="fl">Batch</label><input class="fi" id="ro-batch" list="rusak-batch-list" placeholder="Ketik / pilih batch..." autocomplete="off" oninput="matchRusakOutItem()"></div>
+  <input type="hidden" id="ro-item-key">
+  <div id="ro-info" style="font-size:12px;margin:0 0 12px"></div>
+  <div class="fg"><label class="fl">Jumlah Potong</label><input class="fi" type="number" id="ro-qty" min="1"></div>
+  <div class="fg"><label class="fl">Keterangan</label><input class="fi" id="ro-ket" placeholder="Catatan..."></div>
+  <div class="mf">
+    <button class="btn br btn-full" id="ro-submit" onclick="doRusakOut()">Potong Stok</button>
+    <button class="btn bo btn-full" onclick="closeM('m-rusak-out')">Batal</button>
+  </div>
+</div></div>
+
+<!-- INPUT LAPORAN QC -->
+<div class="mo" id="m-qc"><div class="md">
+  <div class="md-handle"></div>
+  <div class="mt" id="qc-modal-title">Input Laporan QC</div>
+  <input type="hidden" id="qc-edit-key">
+  <div class="fg"><label class="fl">Tanggal QC</label><input class="fi" type="date" id="qc-tgl"></div>
+  <div class="fg"><label class="fl">Batch</label><input class="fi" id="qc-batch" list="qc-batch-list" placeholder="Contoh: 2511A" autocomplete="off"></div>
+  <datalist id="qc-batch-list"></datalist>
+  <div class="fg"><label class="fl">Produk (dari Kategori)</label><input class="fi" id="qc-produk" list="rusak-grup-list" placeholder="Ketik / pilih produk..." autocomplete="off"></div>
+  <div class="fg"><label class="fl">Jenis Kerusakan</label><input class="fi" id="qc-jenis" list="rusak-jenis-list" placeholder="Ketik / pilih jenis kerusakan..." autocomplete="off"></div>
+  <div style="display:flex;gap:8px">
+    <div class="fg" style="flex:1"><label class="fl">Qty Rusak</label><input class="fi" type="number" id="qc-rusak" min="0" oninput="updQcPersen()"></div>
+    <div class="fg" style="flex:1"><label class="fl">Total QC</label><input class="fi" type="number" id="qc-total" min="1" oninput="updQcPersen()"></div>
+  </div>
+  <div id="qc-persen-info" style="font-size:13px;font-weight:700;margin:-4px 0 12px;color:var(--p2)"></div>
+  <div class="mf">
+    <button class="btn bp btn-full" onclick="doQcInput()">Simpan</button>
+    <button class="btn bo btn-full" onclick="closeM('m-qc')">Batal</button>
+  </div>
+</div></div>
+
+<!-- KEDATANGAN BATCH -->
+<div class="mo" id="m-batch"><div class="md">
+  <div class="md-handle"></div>
+  <div class="mt" id="batch-modal-title">Kedatangan Batch Baru</div>
+  <input type="hidden" id="bt-edit-key">
+  <div class="fg"><label class="fl">Kode Batch</label><input class="fi" id="bt-kode" placeholder="Contoh: 2511A" autocomplete="off"></div>
+  <div class="fg"><label class="fl">Produk (dari Kategori)</label><input class="fi" id="bt-produk" list="rusak-grup-list" placeholder="Ketik / pilih produk..." autocomplete="off"></div>
+  <div class="fg"><label class="fl">Tanggal Datang</label><input class="fi" type="date" id="bt-tgl"></div>
+  <div class="fg"><label class="fl">Qty Datang</label><input class="fi" type="number" id="bt-qty" min="0" placeholder="0"></div>
+  <div class="fg"><label class="fl">Keterangan</label><input class="fi" id="bt-ket" placeholder="Catatan (opsional)..."></div>
+  <div class="mf">
+    <button class="btn bp btn-full" onclick="doBatchInput()">Simpan</button>
+    <button class="btn bo btn-full" onclick="closeM('m-batch')">Batal</button>
+  </div>
+</div></div>
+
 <div id="toast"></div>
 
 <script>
+window.__SEED_DATA__ = {"defects": ["dinamo kasar", "tidak nyala", "mahkota defect", "cool tip defect", "body belang", "meledak", "ring bercak", "kabel defect", "roll noda", "cover catokan noda", "body cacat", "tombol cacat", "cover plastik rusak", "indikator cacat", "corong cacat", "tidak panas", "modul eror", "magnet tidak ada", "Roll Miring", "Gredek", "Bunyi Tek-tek", "Bau Gosong", "Box rusak", "Baterai rusak", "Roll cuil", "Ring cacat", "Baterai habis"], "batches": [{"kode": "2601B", "produk": "NV-HR-LIBRAV2-MM", "tanggal": "05/05/2026", "tglISO": "2026-05-05", "qty": 7945, "ket": "CTR 009"}, {"kode": "2601B", "produk": "NV-HR-LIBRAV2-U", "tanggal": "05/05/2026", "tglISO": "2026-05-05", "qty": 10395, "ket": "CTR 009"}, {"kode": "2601B", "produk": "NV-HR-LIBRAV2-MM", "tanggal": "22/05/2026", "tglISO": "", "qty": 2450, "ket": "CTR 007"}, {"kode": "2601A", "produk": "NV-DRY-LEO-MM", "tanggal": "22/05/2026", "tglISO": "", "qty": 1592, "ket": "CTR 007"}, {"kode": "2511A", "produk": "NV-DRY-MINA-KR", "tanggal": "02/09/2026", "tglISO": "2026-09-02", "qty": 1000, "ket": "CTR 050"}, {"kode": "2511A", "produk": "NV-DRY-MINA-S", "tanggal": "02/09/2026", "tglISO": "2026-09-02", "qty": 1000, "ket": "CTR 050"}, {"kode": "2511A", "produk": "NV-DRY-MINA-MM", "tanggal": "02/09/2026", "tglISO": "2026-09-02", "qty": 1000, "ket": "CTR 050"}, {"kode": "2511A", "produk": "NV-DRY-MINA-KR", "tanggal": "02/11/2026", "tglISO": "2026-11-02", "qty": 1070, "ket": "CTR 058"}, {"kode": "2511A", "produk": "NV-DRY-MINA-S", "tanggal": "02/11/2026", "tglISO": "2026-11-02", "qty": 230, "ket": "CTR 058"}, {"kode": "2511A", "produk": "NV-DRY-MINA-MM", "tanggal": "02/11/2026", "tglISO": "2026-11-02", "qty": 1380, "ket": "CTR 058"}, {"kode": "2512A", "produk": "NV-HR-VIRGO2-MM", "tanggal": "02/11/2026", "tglISO": "2026-11-02", "qty": 6000, "ket": "CTR 058"}, {"kode": "2511A", "produk": "NV-DRY-LEO-MM", "tanggal": "02/11/2026", "tglISO": "2026-11-02", "qty": 1904, "ket": "CTR 058"}, {"kode": "2512B", "produk": "NV-DRY-MINA-KR", "tanggal": "26/03/2026", "tglISO": "", "qty": 1250, "ket": "CTR 060"}, {"kode": "2512B", "produk": "NV-DRY-MINA-S", "tanggal": "26/03/2026", "tglISO": "", "qty": 1250, "ket": "CTR 060"}, {"kode": "2512B", "produk": "NV-DRY-MINA-MM", "tanggal": "26/03/2026", "tglISO": "", "qty": 1500, "ket": "CTR 060"}, {"kode": "2511A", "produk": "NV-DRY-MINA-KR", "tanggal": "26/03/2026", "tglISO": "", "qty": 180, "ket": "CTR 060"}, {"kode": "2511A", "produk": "NV-DRY-MINA-S", "tanggal": "26/03/2026", "tglISO": "", "qty": 20, "ket": "CTR 060"}, {"kode": "2511A", "produk": "NV-DRY-MINA-MM", "tanggal": "26/03/2026", "tglISO": "", "qty": 120, "ket": "CTR 060"}, {"kode": "2601B", "produk": "NV-DRY-MINA-S", "tanggal": "30/05/2026", "tglISO": "", "qty": 1260, "ket": "CTR 006"}, {"kode": "2511B", "produk": "NV-HR-VIRGO2-MM", "tanggal": "02/09/2026", "tglISO": "2026-09-02", "qty": 6000, "ket": "CTR 050"}, {"kode": "2601A", "produk": "NV-DRY-LEO-MM", "tanggal": "05/02/2026", "tglISO": "2026-02-05", "qty": 12224, "ket": "CTR 002"}, {"kode": "2512B", "produk": "NV-DRY-LEO-MM", "tanggal": "05/06/2026", "tglISO": "2026-06-05", "qty": 12384, "ket": "CTR 001"}, {"kode": "2512A", "produk": "NV-HR-LIBRAV2-MM", "tanggal": "03/07/2026", "tglISO": "2026-07-03", "qty": 3500, "ket": "CTR 062"}, {"kode": "2512A", "produk": "NV-HR-LIBRAV2-U", "tanggal": "03/07/2026", "tglISO": "2026-07-03", "qty": 3500, "ket": "CTR 062"}, {"kode": "2601B", "produk": "NV-DRY-MINA-KR", "tanggal": "29/06/2026", "tglISO": "2026-06-29", "qty": 2260, "ket": "CTR 013"}, {"kode": "2601B", "produk": "NV-DRY-MINA-MM", "tanggal": "29/06/2026", "tglISO": "2026-06-29", "qty": 2500, "ket": "CTR 013"}, {"kode": "2605B", "produk": "NV-HR-LIBRAV2-MM", "tanggal": "07/04/2026", "tglISO": "2026-04-07", "qty": 5250, "ket": "CTR 022"}, {"kode": "2511A", "produk": "NV-HR-LIBRAV2-MM", "tanggal": "01/07/2026", "tglISO": "2026-07-01", "qty": 11340, "ket": "CTR 049"}, {"kode": "2511A", "produk": "NV-HR-LIBRAV2-U", "tanggal": "01/07/2026", "tglISO": "2026-07-01", "qty": 6895, "ket": "CTR 049"}, {"kode": "2511A", "produk": "NV-HR-LIBRAV2-MM", "tanggal": "13/01/2026", "tglISO": "", "qty": 1680, "ket": "CTR 051"}, {"kode": "2511A", "produk": "NV-HR-LIBRAV2-U", "tanggal": "13/01/2026", "tglISO": "", "qty": 6125, "ket": "CTR 051"}, {"kode": "2510A", "produk": "NV-HR-LIBRAV2-U", "tanggal": "28/11/25", "tglISO": "", "qty": 4025, "ket": "CTR 041"}, {"kode": "2510B", "produk": "NV-HR-LIBRAV2-U", "tanggal": "30/11/25", "tglISO": "", "qty": 1890, "ket": "CTR 043"}, {"kode": "2510B", "produk": "NV-HR-LIBRAV2-U", "tanggal": "22/12/25", "tglISO": "", "qty": 1470, "ket": "CTR 044"}], "qc": [{"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-S", "jenis": "body cacat", "qtyRusak": 63, "totalQc": 250}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-S", "jenis": "tombol cacat", "qtyRusak": 62, "totalQc": 250}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-S", "jenis": "cover plastik", "qtyRusak": 5, "totalQc": 40}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-S", "jenis": "indikator cacat", "qtyRusak": 2, "totalQc": 20}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-S", "jenis": "corong cacat", "qtyRusak": 3, "totalQc": 20}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-KR", "jenis": "tombol cacat", "qtyRusak": 67, "totalQc": 300}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-KR", "jenis": "body cacat", "qtyRusak": 25, "totalQc": 250}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-KR", "jenis": "corong cacat", "qtyRusak": 31, "totalQc": 250}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-KR", "jenis": "indikator cacat", "qtyRusak": 1, "totalQc": 200}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-KR", "jenis": "tidak panas", "qtyRusak": 1, "totalQc": 350}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-KR", "jenis": "tidak nyala", "qtyRusak": 1, "totalQc": 400}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-MM", "jenis": "body cacat", "qtyRusak": 75, "totalQc": 80}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-MM", "jenis": "tombol cacat", "qtyRusak": 65, "totalQc": 80}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-MM", "jenis": "kabel defect", "qtyRusak": 3, "totalQc": 20}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-MM", "jenis": "indikator cacat", "qtyRusak": 2, "totalQc": 20}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-MM", "jenis": "cover plastik", "qtyRusak": 4, "totalQc": 20}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-MM", "jenis": "tidak nyala", "qtyRusak": 10, "totalQc": 20}, {"tanggal": "06/03/2026", "tglISO": "2026-03-06", "batch": "2511A", "produk": "NV-DRY-MINA-MM", "jenis": "corong cacat", "qtyRusak": 13, "totalQc": 20}, {"tanggal": "06/04/2026", "tglISO": "2026-04-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Roll Miring", "qtyRusak": 85, "totalQc": 1183}, {"tanggal": "06/04/2026", "tglISO": "2026-04-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Gredek", "qtyRusak": 45, "totalQc": 1183}, {"tanggal": "06/04/2026", "tglISO": "2026-04-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Roll cuil", "qtyRusak": 10, "totalQc": 1183}, {"tanggal": "06/04/2026", "tglISO": "2026-04-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Bunyi Tek-tek", "qtyRusak": 4, "totalQc": 813}, {"tanggal": "06/04/2026", "tglISO": "2026-04-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Gredek", "qtyRusak": 31, "totalQc": 813}, {"tanggal": "06/06/2026", "tglISO": "2026-06-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Roll Miring", "qtyRusak": 53, "totalQc": 1183}, {"tanggal": "06/06/2026", "tglISO": "2026-06-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "dinamo kasar", "qtyRusak": 138, "totalQc": 1190}, {"tanggal": "06/06/2026", "tglISO": "2026-06-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "roll noda", "qtyRusak": 70, "totalQc": 1183}, {"tanggal": "06/06/2026", "tglISO": "2026-06-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Roll Miring", "qtyRusak": 13, "totalQc": 813}, {"tanggal": "06/06/2026", "tglISO": "2026-06-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-U", "jenis": "dinamo kasar", "qtyRusak": 15, "totalQc": 813}, {"tanggal": "06/06/2026", "tglISO": "2026-06-06", "batch": "2511B", "produk": "NV-HR-VIRGO2-MM", "jenis": "dinamo kasar", "qtyRusak": 750, "totalQc": 750}, {"tanggal": "06/06/2026", "tglISO": "2026-06-06", "batch": "2512B", "produk": "NV-DRY-LEO-MM", "jenis": "dinamo kasar", "qtyRusak": 16, "totalQc": 2476}, {"tanggal": "06/06/2026", "tglISO": "2026-06-06", "batch": "2512B", "produk": "NV-DRY-LEO-MM", "jenis": "body belang", "qtyRusak": 88, "totalQc": 2476}, {"tanggal": "06/10/2026", "tglISO": "2026-10-06", "batch": "2511A", "produk": "NV-DRY-MINA-MM", "jenis": "corong cacat", "qtyRusak": 19, "totalQc": 20}, {"tanggal": "06/10/2026", "tglISO": "2026-10-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "dinamo kasar", "qtyRusak": 20, "totalQc": 1183}, {"tanggal": "06/10/2026", "tglISO": "2026-10-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Roll Miring", "qtyRusak": 50, "totalQc": 1183}, {"tanggal": "06/10/2026", "tglISO": "2026-10-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Gredek", "qtyRusak": 35, "totalQc": 1183}, {"tanggal": "06/10/2026", "tglISO": "2026-10-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Bunyi Tek-tek", "qtyRusak": 5, "totalQc": 813}, {"tanggal": "06/10/2026", "tglISO": "2026-10-06", "batch": "2511A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Gredek", "qtyRusak": 30, "totalQc": 813}, {"tanggal": "06/10/2026", "tglISO": "2026-10-06", "batch": "2511B", "produk": "NV-HR-VIRGO2-MM", "jenis": "Gredek", "qtyRusak": 22, "totalQc": 750}, {"tanggal": "06/10/2026", "tglISO": "2026-10-06", "batch": "2511B", "produk": "NV-HR-VIRGO2-MM", "jenis": "dinamo kasar", "qtyRusak": 8, "totalQc": 750}, {"tanggal": "15/06/2026", "tglISO": "", "batch": "2512B", "produk": "NV-DRY-LEO-MM", "jenis": "dinamo kasar", "qtyRusak": 6, "totalQc": 2476}, {"tanggal": "15/06/2026", "tglISO": "", "batch": "2512B", "produk": "NV-DRY-LEO-MM", "jenis": "Ring cacat", "qtyRusak": 2, "totalQc": 2476}, {"tanggal": "15/06/2026", "tglISO": "", "batch": "2512B", "produk": "NV-DRY-LEO-MM", "jenis": "body cacat", "qtyRusak": 40, "totalQc": 2480}, {"tanggal": "15/06/2026", "tglISO": "", "batch": "2511A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Roll Miring", "qtyRusak": 25, "totalQc": 1183}, {"tanggal": "15/06/2026", "tglISO": "", "batch": "2511A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Gredek", "qtyRusak": 10, "totalQc": 1183}, {"tanggal": "15/06/2026", "tglISO": "", "batch": "2510A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Gredek", "qtyRusak": 60, "totalQc": 402}, {"tanggal": "15/06/2026", "tglISO": "", "batch": "2510A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Bunyi Tek-tek", "qtyRusak": 8, "totalQc": 402}, {"tanggal": "15/06/2026", "tglISO": "", "batch": "2510A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Roll cuil", "qtyRusak": 1, "totalQc": 402}, {"tanggal": "15/06/2026", "tglISO": "", "batch": "2510A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Roll Miring", "qtyRusak": 1, "totalQc": 402}, {"tanggal": "22/06/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "roll noda", "qtyRusak": 3, "totalQc": 560}, {"tanggal": "22/06/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "dinamo kasar", "qtyRusak": 7, "totalQc": 560}, {"tanggal": "22/06/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Roll Miring", "qtyRusak": 70, "totalQc": 560}, {"tanggal": "22/06/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Gredek", "qtyRusak": 25, "totalQc": 560}, {"tanggal": "22/06/2026", "tglISO": "", "batch": "2511B", "produk": "NV-HR-VIRGO2-MM", "jenis": "dinamo kasar", "qtyRusak": 13, "totalQc": 750}, {"tanggal": "22/06/2026", "tglISO": "", "batch": "2511B", "produk": "NV-HR-VIRGO2-MM", "jenis": "Gredek", "qtyRusak": 17, "totalQc": 750}, {"tanggal": "27/06/2026", "tglISO": "", "batch": "2601A", "produk": "NV-DRY-LEO-MM", "jenis": "dinamo kasar", "qtyRusak": 2, "totalQc": 776}, {"tanggal": "27/06/2026", "tglISO": "", "batch": "2601A", "produk": "NV-DRY-LEO-MM", "jenis": "body cacat", "qtyRusak": 14, "totalQc": 776}, {"tanggal": "27/06/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "roll noda", "qtyRusak": 2, "totalQc": 420}, {"tanggal": "27/06/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Gredek", "qtyRusak": 33, "totalQc": 420}, {"tanggal": "27/06/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Roll Miring", "qtyRusak": 70, "totalQc": 420}, {"tanggal": "27/06/2026", "tglISO": "", "batch": "2511B", "produk": "NV-HR-VIRGO2-MM", "jenis": "Baterai habis", "qtyRusak": 2, "totalQc": 750}, {"tanggal": "27/06/2026", "tglISO": "", "batch": "2511B", "produk": "NV-HR-VIRGO2-MM", "jenis": "dinamo kasar", "qtyRusak": 8, "totalQc": 750}, {"tanggal": "27/06/2026", "tglISO": "", "batch": "2511B", "produk": "NV-HR-VIRGO2-MM", "jenis": "Gredek", "qtyRusak": 20, "totalQc": 750}, {"tanggal": "07/03/2026", "tglISO": "2026-03-07", "batch": "2601A", "produk": "NV-DRY-LEO-MM", "jenis": "body cacat", "qtyRusak": 16, "totalQc": 400}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "dinamo kasar", "qtyRusak": 30, "totalQc": 206}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Roll Miring", "qtyRusak": 97, "totalQc": 206}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "roll noda", "qtyRusak": 10, "totalQc": 206}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "body cacat", "qtyRusak": 4, "totalQc": 206}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "mahkota defect", "qtyRusak": 2, "totalQc": 206}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "cool tip defect", "qtyRusak": 1, "totalQc": 206}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2510A", "produk": "NV-HR-LIBRAV2-U", "jenis": "roll noda", "qtyRusak": 6, "totalQc": 402}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2510A", "produk": "NV-HR-LIBRAV2-U", "jenis": "modul", "qtyRusak": 2, "totalQc": 402}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2510A", "produk": "NV-HR-LIBRAV2-U", "jenis": "body cacat", "qtyRusak": 2, "totalQc": 402}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2510A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Roll Miring", "qtyRusak": 3, "totalQc": 402}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2510A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Gredek", "qtyRusak": 15, "totalQc": 402}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2510A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Bunyi Tek-tek", "qtyRusak": 6, "totalQc": 407}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Gredek", "qtyRusak": 63, "totalQc": 206}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Bunyi Tek-tek", "qtyRusak": 8, "totalQc": 206}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2512A", "produk": "NV-HR-VIRGO2-MM", "jenis": "Gredek", "qtyRusak": 20, "totalQc": 360}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2512A", "produk": "NV-HR-VIRGO2-MM", "jenis": "dinamo kasar", "qtyRusak": 9, "totalQc": 360}, {"tanggal": "07/07/2026", "tglISO": "2026-07-07", "batch": "2512A", "produk": "NV-HR-VIRGO2-MM", "jenis": "modul", "qtyRusak": 1, "totalQc": 360}, {"tanggal": "13/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Roll Miring", "qtyRusak": 52, "totalQc": 91}, {"tanggal": "13/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "roll noda", "qtyRusak": 1, "totalQc": 92}, {"tanggal": "13/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Gredek", "qtyRusak": 12, "totalQc": 90}, {"tanggal": "13/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "dinamo kasar", "qtyRusak": 1, "totalQc": 90}, {"tanggal": "13/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "mahkota defect", "qtyRusak": 2, "totalQc": 90}, {"tanggal": "13/07/2026", "tglISO": "", "batch": "2510B", "produk": "NV-HR-LIBRAV2-U", "jenis": "Gredek", "qtyRusak": 21, "totalQc": 373}, {"tanggal": "13/07/2026", "tglISO": "", "batch": "2510B", "produk": "NV-HR-LIBRAV2-U", "jenis": "roll noda", "qtyRusak": 5, "totalQc": 373}, {"tanggal": "13/07/2026", "tglISO": "", "batch": "2510B", "produk": "NV-HR-LIBRAV2-U", "jenis": "Bunyi Tek-tek", "qtyRusak": 4, "totalQc": 373}, {"tanggal": "13/07/2026", "tglISO": "", "batch": "2510B", "produk": "NV-HR-LIBRAV2-U", "jenis": "Roll Miring", "qtyRusak": 1, "totalQc": 373}, {"tanggal": "13/07/2026", "tglISO": "", "batch": "2510B", "produk": "NV-HR-LIBRAV2-U", "jenis": "modul", "qtyRusak": 4, "totalQc": 373}, {"tanggal": "13/07/2026", "tglISO": "", "batch": "2601A", "produk": "NV-DRY-LEO-MM", "jenis": "body cacat", "qtyRusak": 40, "totalQc": 808}, {"tanggal": "15/07/2026", "tglISO": "", "batch": "2510B", "produk": "NV-HR-LIBRAV2-U", "jenis": "Roll Miring", "qtyRusak": 37, "totalQc": 373}, {"tanggal": "15/07/2026", "tglISO": "", "batch": "2510B", "produk": "NV-HR-LIBRAV2-U", "jenis": "roll noda", "qtyRusak": 3, "totalQc": 373}, {"tanggal": "15/07/2026", "tglISO": "", "batch": "2510B", "produk": "NV-HR-LIBRAV2-U", "jenis": "Gredek", "qtyRusak": 29, "totalQc": 373}, {"tanggal": "15/07/2026", "tglISO": "", "batch": "2510B", "produk": "NV-HR-LIBRAV2-U", "jenis": "modul", "qtyRusak": 1, "totalQc": 376}, {"tanggal": "15/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "roll noda", "qtyRusak": 1, "totalQc": 97}, {"tanggal": "15/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Roll Miring", "qtyRusak": 22, "totalQc": 96}, {"tanggal": "15/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "dinamo kasar", "qtyRusak": 2, "totalQc": 96}, {"tanggal": "15/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Gredek", "qtyRusak": 10, "totalQc": 96}, {"tanggal": "15/07/2026", "tglISO": "", "batch": "2601A", "produk": "NV-DRY-LEO-MM", "jenis": "body cacat", "qtyRusak": 8, "totalQc": 456}, {"tanggal": "15/07/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-VIRGO2-MM", "jenis": "Gredek", "qtyRusak": 52, "totalQc": 390}, {"tanggal": "15/07/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-VIRGO2-MM", "jenis": "dinamo kasar", "qtyRusak": 32, "totalQc": 390}, {"tanggal": "15/07/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-VIRGO2-MM", "jenis": "modul", "qtyRusak": 5, "totalQc": 390}, {"tanggal": "15/07/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-VIRGO2-MM", "jenis": "body cacat", "qtyRusak": 1, "totalQc": 390}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Roll Miring", "qtyRusak": 84, "totalQc": 100}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "roll noda", "qtyRusak": 6, "totalQc": 28}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "modul", "qtyRusak": 3, "totalQc": 28}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "cool tip defect", "qtyRusak": 1, "totalQc": 28}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "body cacat", "qtyRusak": 3, "totalQc": 38}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "mahkota defect", "qtyRusak": 2, "totalQc": 38}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Bunyi Tek-tek", "qtyRusak": 4, "totalQc": 38}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "dinamo kasar", "qtyRusak": 2, "totalQc": 38}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Gredek", "qtyRusak": 35, "totalQc": 38}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Roll Miring", "qtyRusak": 15, "totalQc": 175}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-HR-LIBRAV2-U", "jenis": "roll noda", "qtyRusak": 1, "totalQc": 175}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Gredek", "qtyRusak": 9, "totalQc": 175}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-HR-LIBRAV2-U", "jenis": "Bunyi Tek-tek", "qtyRusak": 2, "totalQc": 175}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-HR-LIBRAV2-U", "jenis": "cool tip defect", "qtyRusak": 4, "totalQc": 175}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-HR-LIBRAV2-U", "jenis": "modul", "qtyRusak": 3, "totalQc": 175}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-HR-LIBRAV2-U", "jenis": "kabel defect", "qtyRusak": 1, "totalQc": 175}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-DRY-MINA-KR", "jenis": "body cacat", "qtyRusak": 8, "totalQc": 60}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-DRY-MINA-KR", "jenis": "corong cacat", "qtyRusak": 2, "totalQc": 60}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-DRY-MINA-KR", "jenis": "tombol cacat", "qtyRusak": 4, "totalQc": 60}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-DRY-MINA-KR", "jenis": "kabel defect", "qtyRusak": 1, "totalQc": 60}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-DRY-MINA-KR", "jenis": "cover plastik", "qtyRusak": 2, "totalQc": 60}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-DRY-MINA-KR", "jenis": "Bau Gosong", "qtyRusak": 2, "totalQc": 60}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2511A", "produk": "NV-DRY-MINA-KR", "jenis": "Box rusak", "qtyRusak": 1, "totalQc": 60}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-VIRGO2-MM", "jenis": "Gredek", "qtyRusak": 35, "totalQc": 150}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-VIRGO2-MM", "jenis": "dinamo kasar", "qtyRusak": 23, "totalQc": 150}, {"tanggal": "17/07/2026", "tglISO": "", "batch": "2512A", "produk": "NV-HR-VIRGO2-MM", "jenis": "Baterai rusak", "qtyRusak": 2, "totalQc": 150}, {"tanggal": "24/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Roll Miring", "qtyRusak": 53, "totalQc": 85}, {"tanggal": "24/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "roll noda", "qtyRusak": 11, "totalQc": 85}, {"tanggal": "24/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Gredek", "qtyRusak": 26, "totalQc": 85}, {"tanggal": "24/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "dinamo kasar", "qtyRusak": 8, "totalQc": 85}, {"tanggal": "24/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "mahkota defect", "qtyRusak": 4, "totalQc": 85}, {"tanggal": "24/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "cool tip defect", "qtyRusak": 1, "totalQc": 85}, {"tanggal": "24/07/2026", "tglISO": "", "batch": "2601B", "produk": "NV-HR-LIBRAV2-MM", "jenis": "Bunyi Tek-tek", "qtyRusak": 2, "totalQc": 85}, {"tanggal": "24/07/2026", "tglISO": "", "batch": "2601A", "produk": "NV-DRY-LEO-MM", "jenis": "body cacat", "qtyRusak": 8, "totalQc": 64}]} ;
+</script>
+<script>
 let db=null;
-let allS={},allT={},allK={},allKat=[];
+let allS={},allT={},allK={},allKat=[],allRusak={},allRekon={},allTrxRusak={},allQc={},allBatch={};
+let allRusakGrupM=[],allRusakJenisM=[];
 let catFilter='',lowFilter=false;
 let currentUser=null;
 let trxDateFilter='';
@@ -775,11 +1127,11 @@ function listen(){
     if(snap.val()===null){
       ['Filter','Rem','Transmisi','Kelistrikan','Pelumas','Lainnya'].forEach(n=>db.ref('kategori').push({nama:n}));
     }
-    renderKatSelect();renderKatList();updSel();
+    renderKatSelect();renderKatList();updSel();renderGrupJenisDatalists();
   });
   db.ref('sparepart').on('value',snap=>{
     allS={};if(snap.val())snap.forEach(c=>{allS[c.key]={...c.val(),_key:c.key}});
-    renderStok();renderSKU();renderDash();renderLap();updSel();
+    renderStok();renderSKU();renderDash();renderLap();updSel();renderGrupJenisDatalists();
   });
   db.ref('transaksi').orderByChild('ts').on('value',snap=>{
     allT={};if(snap.val())snap.forEach(c=>{allT[c.key]={...c.val(),_key:c.key}});
@@ -789,6 +1141,36 @@ function listen(){
   db.ref('users').on('value',snap=>{
     allK={};if(snap.val())snap.forEach(c=>{if(c.val().role!=='admin')allK[c.key]={...c.val(),_key:c.key}});
     renderKar();renderDash();
+  });
+  db.ref('rusak').on('value',snap=>{
+    allRusak={};if(snap.val())snap.forEach(c=>{allRusak[c.key]={...c.val(),_key:c.key}});
+    renderRusak();
+  });
+  db.ref('rekondisi').orderByChild('ts').on('value',snap=>{
+    allRekon={};if(snap.val())snap.forEach(c=>{allRekon[c.key]={...c.val(),_key:c.key}});
+    renderRekon();
+  });
+  db.ref('transaksiRusak').orderByChild('ts').on('value',snap=>{
+    allTrxRusak={};if(snap.val())snap.forEach(c=>{allTrxRusak[c.key]={...c.val(),_key:c.key}});
+    renderTrxRusak();
+  });
+  db.ref('qc').orderByChild('ts').on('value',snap=>{
+    allQc={};if(snap.val())snap.forEach(c=>{allQc[c.key]={...c.val(),_key:c.key}});
+    renderQcLog();renderQcDash();
+  });
+  db.ref('batch').orderByChild('ts').on('value',snap=>{
+    allBatch={};if(snap.val())snap.forEach(c=>{allBatch[c.key]={...c.val(),_key:c.key}});
+    renderBatchList();renderQcBatchList();
+  });
+  db.ref('rusakMasterGrup').on('value',snap=>{
+    allRusakGrupM=[];
+    if(snap.val())snap.forEach(c=>{if(c.val()&&c.val().nama)allRusakGrupM.push({key:c.key,nama:c.val().nama})});
+    renderGrupJenisDatalists();
+  });
+  db.ref('rusakMasterJenis').on('value',snap=>{
+    allRusakJenisM=[];
+    if(snap.val())snap.forEach(c=>{if(c.val()&&c.val().nama)allRusakJenisM.push({key:c.key,nama:c.val().nama})});
+    renderGrupJenisDatalists();renderJenisKerusakan();
   });
 }
 
@@ -918,10 +1300,20 @@ function renderKatList(){
   // Filter out kategori invalid
   const validKat=allKat.filter(k=>k&&k.nama&&k.nama.trim());
   if(!validKat.length){el.innerHTML='<p style="font-size:13px;color:var(--mu);text-align:center;padding:12px">Belum ada kategori</p>';return}
-  el.innerHTML=validKat.map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f4f6f9">
-    <span style="font-size:13px;font-weight:600">${k.nama}</span>
-    <button class="del-kat-btn" data-key="${k.key}" data-nama="${esc(k.nama)}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit">Hapus</button>
+  el.innerHTML=validKat.map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #f4f6f9">
+    <span style="font-size:13px;font-weight:600;flex:1;min-width:0">${k.nama}</span>
+    <div style="display:flex;gap:5px;flex-shrink:0">
+      <button class="edit-kat-btn" data-key="${k.key}" data-nama="${esc(k.nama)}" style="font-size:11px;font-weight:700;color:#2d5f99;background:var(--bl);border:1.5px solid #b5d0ed;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit">Edit</button>
+      <button class="del-kat-btn" data-key="${k.key}" data-nama="${esc(k.nama)}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit">Hapus</button>
+    </div>
   </div>`).join('');
+  document.querySelectorAll('.edit-kat-btn').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const key=this.getAttribute('data-key');
+      const nama=this.getAttribute('data-nama');
+      editKat(key,nama);
+    });
+  });
   document.querySelectorAll('.del-kat-btn').forEach(btn=>{
     btn.addEventListener('click',function(){
       const key=this.getAttribute('data-key');
@@ -931,6 +1323,15 @@ function renderKatList(){
       });
     });
   });
+}
+async function editKat(key,namaLama){
+  const baru=(prompt('Ubah nama kategori:',namaLama)||'').trim();
+  if(!baru||baru===namaLama)return;
+  if(allKat.find(k=>(k.nama||'').toLowerCase()===baru.toLowerCase()&&k.key!==key))return toast('Kategori "'+baru+'" sudah ada','e');
+  try{
+    await db.ref('kategori/'+key).update({nama:baru});
+    toast('Kategori diperbarui');
+  }catch(e){toast('Gagal: '+e.message,'e')}
 }
 async function tambahKat(){
   const input=document.getElementById('kat-baru');
@@ -1563,7 +1964,13 @@ async function autoBackup(){
       sparepart:allS,
       transaksi:allT,
       kategori:allKat,
-      users:allK
+      users:allK,
+      rusak:allRusak,
+      rekondisi:allRekon,
+      transaksiRusak:allTrxRusak,
+      rusakMasterJenis:allRusakJenisM,
+      qc:allQc,
+      batch:allBatch
     };
     // Simpan ke /backups dengan key timestamp
     await db.ref('backups/'+now).set(snapshot);
@@ -1594,7 +2001,13 @@ async function doBackupNow(){
       sparepart:allS,
       transaksi:allT,
       kategori:allKat,
-      users:allK
+      users:allK,
+      rusak:allRusak,
+      rekondisi:allRekon,
+      transaksiRusak:allTrxRusak,
+      rusakMasterJenis:allRusakJenisM,
+      qc:allQc,
+      batch:allBatch
     };
     await db.ref('backups/'+now).set(snapshot);
     lastAutoBackupTs=now;
@@ -1664,6 +2077,31 @@ async function restoreFromBackup(key){
       data.kategori.forEach(k=>{if(k.key)katData[k.key]={nama:k.nama}});
       await db.ref('kategori').set(katData);
     }
+    // Restore barang rusak & mutasinya
+    if(data.rusak){
+      const d={};Object.entries(data.rusak).forEach(([k,v])=>{const{_key,...rest}=v;d[k]=rest});
+      await db.ref('rusak').set(d);
+    }
+    if(data.rekondisi){
+      const d={};Object.entries(data.rekondisi).forEach(([k,v])=>{const{_key,...rest}=v;d[k]=rest});
+      await db.ref('rekondisi').set(d);
+    }
+    if(data.transaksiRusak){
+      const d={};Object.entries(data.transaksiRusak).forEach(([k,v])=>{const{_key,...rest}=v;d[k]=rest});
+      await db.ref('transaksiRusak').set(d);
+    }
+    if(data.rusakMasterJenis&&Array.isArray(data.rusakMasterJenis)){
+      const d={};data.rusakMasterJenis.forEach(j=>{if(j.key)d[j.key]={nama:j.nama}});
+      await db.ref('rusakMasterJenis').set(d);
+    }
+    if(data.qc){
+      const d={};Object.entries(data.qc).forEach(([k,v])=>{const{_key,...rest}=v;d[k]=rest});
+      await db.ref('qc').set(d);
+    }
+    if(data.batch){
+      const d={};Object.entries(data.batch).forEach(([k,v])=>{const{_key,...rest}=v;d[k]=rest});
+      await db.ref('batch').set(d);
+    }
     toast('Data berhasil dipulihkan');
   }catch(e){toast('Gagal restore: '+e.message,'e')}
 }
@@ -1676,7 +2114,13 @@ function downloadBackupJSON(){
       sparepart:allS,
       transaksi:allT,
       kategori:allKat,
-      users:allK
+      users:allK,
+      rusak:allRusak,
+      rekondisi:allRekon,
+      transaksiRusak:allTrxRusak,
+      rusakMasterJenis:allRusakJenisM,
+      qc:allQc,
+      batch:allBatch
     };
     const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     const a=document.createElement('a');
@@ -1714,6 +2158,30 @@ function onRestoreFile(input){
             data.kategori.forEach(k=>{if(k.key)katData[k.key]={nama:k.nama}});
             await db.ref('kategori').set(katData);
           }
+          if(data.rusak){
+            const d={};Object.entries(data.rusak).forEach(([k,v])=>{const{_key,...rest}=v;d[k]=rest});
+            await db.ref('rusak').set(d);
+          }
+          if(data.rekondisi){
+            const d={};Object.entries(data.rekondisi).forEach(([k,v])=>{const{_key,...rest}=v;d[k]=rest});
+            await db.ref('rekondisi').set(d);
+          }
+          if(data.transaksiRusak){
+            const d={};Object.entries(data.transaksiRusak).forEach(([k,v])=>{const{_key,...rest}=v;d[k]=rest});
+            await db.ref('transaksiRusak').set(d);
+          }
+          if(data.rusakMasterJenis&&Array.isArray(data.rusakMasterJenis)){
+            const d={};data.rusakMasterJenis.forEach(j=>{if(j.key)d[j.key]={nama:j.nama}});
+            await db.ref('rusakMasterJenis').set(d);
+          }
+          if(data.qc){
+            const d={};Object.entries(data.qc).forEach(([k,v])=>{const{_key,...rest}=v;d[k]=rest});
+            await db.ref('qc').set(d);
+          }
+          if(data.batch){
+            const d={};Object.entries(data.batch).forEach(([k,v])=>{const{_key,...rest}=v;d[k]=rest});
+            await db.ref('batch').set(d);
+          }
           toast('Restore berhasil');
         }catch(err){toast('Gagal restore: '+err.message,'e')}
       });
@@ -1721,6 +2189,1060 @@ function onRestoreFile(input){
   };
   reader.readAsText(file);
   input.value='';
+}
+
+// ══ BARANG RUSAK (Stok-style) ══
+let rusakCatFilter='';
+const pagerStateRusak={rusak:1,rekon:1,trxrusak:1};
+let rusakSearchQ='',rekonSearchQ='',rekonTab='pending';
+
+function rusakArr(){return Object.values(allRusak)}
+function rekonArr(){return Object.values(allRekon).sort((a,b)=>(b.ts||0)-(a.ts||0))}
+function rekonArrActive(){return rekonArr().filter(r=>!r.deleted)}
+
+function esc2(s){return(s||'').toString().replace(/"/g,'&quot;')}
+
+function onRusakSearch(){rusakSearchQ=(document.getElementById('rusak-q')||{}).value?.toLowerCase()||'';pagerStateRusak.rusak=1;renderRusak()}
+function setRusakCat(c,el){rusakCatFilter=c;pagerStateRusak.rusak=1;document.querySelectorAll('#rusak-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderRusak()}
+
+function renderRusakChips(){
+  const ch=document.getElementById('rusak-chips');
+  if(!ch)return;
+  const grups=[...new Set(rusakArr().map(r=>r.grup))].filter(Boolean).sort();
+  ch.innerHTML=
+    `<div class="chip${!rusakCatFilter?' on':''}" onclick="setRusakCat('',this)">Semua</div>`+
+    grups.map(g=>`<div class="chip${rusakCatFilter===g?' on':''}" onclick="setRusakCat('${esc2(g)}',this)">${g}</div>`).join('');
+  requestAnimationFrame(()=>updateChipArrows('rusak-chips'));
+}
+
+function renderRusak(){
+  renderRusakChips();
+  const el=document.getElementById('rusak-list');const cnt=document.getElementById('rusak-cnt');if(!el)return;
+  let arr=rusakArr().filter(r=>{
+    const mq=!rusakSearchQ||(r.grup||'').toLowerCase().includes(rusakSearchQ)||(r.jenis||'').toLowerCase().includes(rusakSearchQ)||(r.batch||'').toLowerCase().includes(rusakSearchQ);
+    return mq&&(!rusakCatFilter||r.grup===rusakCatFilter);
+  });
+  arr.sort((a,b)=>(a.grup||'').localeCompare(b.grup||'')||(a.jenis||'').localeCompare(b.jenis||''));
+  if(cnt)cnt.textContent=arr.length+' Item';
+  const pg=paginate2(arr,'rusak');
+  const isAdmin=currentUser&&currentUser.role==='admin';
+  el.innerHTML=pg.count?pg.items.map(r=>{
+    const qty=parseInt(r.qty,10)||0;
+    const col=qty<=0?'#d95f5f':(qty<=10?'#d4924a':'#4f7c6e');
+    return`<div style="padding:12px 14px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <div style="font-size:13px;font-weight:700">${r.grup}</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px">${r.jenis} &bull; Batch: ${r.batch}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:900;color:${col};line-height:1">${qty}</div>
+          <div style="font-size:9px;color:var(--mu)">pcs</div>
+        </div>
+        <div style="display:flex;gap:5px">
+          <button class="rusak-detail-btn" data-key="${r._key}" style="font-size:11px;font-weight:700;color:var(--p2);background:var(--pl);border:1.5px solid #b2dfca;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Detail</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('')+pagerHTML2('rusak',pg.page,pg.total,pg.count):emp('Belum ada item barang rusak');
+  attachRusakStokButtons();
+}
+
+function attachRusakStokButtons(){
+  document.querySelectorAll('.rusak-detail-btn').forEach(btn=>{
+    btn.onclick=function(){showRusakDetail(this.getAttribute('data-key'))};
+  });
+}
+
+// ══ MASTER DATA: SKU GRUP & JENIS KERUSAKAN ══
+function renderBatchDatalist(){
+  const dl=document.getElementById('rusak-batch-list');
+  if(!dl)return;
+  const batches=[...new Set(rusakArr().map(r=>r.batch).filter(Boolean))].sort();
+  dl.innerHTML=batches.map(b=>`<option value="${esc2(b)}">`).join('');
+}
+
+function renderGrupJenisDatalists(){
+  // SKU Grup untuk barang rusak diambil dari KATEGORI (di Kelola SKU)
+  const gl=document.getElementById('rusak-grup-list');
+  if(gl){
+    const cats=[...allKat].map(k=>k.nama).filter(Boolean).sort();
+    gl.innerHTML=cats.map(n=>`<option value="${esc2(n)}">`).join('');
+  }
+  // Jenis kerusakan dari master jenis
+  const jl=document.getElementById('rusak-jenis-list');
+  if(jl)jl.innerHTML=allRusakJenisM.map(g=>`<option value="${esc2(g.nama)}">`).join('');
+}
+
+// Jenis kerusakan: cek di master, kalau belum ada otomatis tambahkan
+async function ensureInMasterJenis(nama){
+  const found=allRusakJenisM.find(g=>g.nama.toLowerCase()===nama.toLowerCase());
+  if(found)return found.nama;
+  try{
+    await db.ref('rusakMasterJenis').push({nama});
+    // listener Firebase akan refresh allRusakJenisM otomatis (tidak push manual)
+  }catch(e){/* tetap lanjut walau gagal simpan ke master */}
+  return nama;
+}
+
+// Konfirmasi hapus inline (klik pertama "Yakin?", klik kedua dalam 3 detik hapus)
+function attachInlineDeleteConfirm(btn,onConfirm){
+  let confirming=false;let timer=null;
+  const originalText=btn.textContent;
+  const originalBg=btn.style.background;
+  const originalColor=btn.style.color;
+  const originalBorder=btn.style.borderColor;
+  btn.onclick=function(e){
+    e.preventDefault();
+    if(!confirming){
+      confirming=true;
+      btn.textContent='Yakin?';
+      btn.style.background='var(--red)';
+      btn.style.color='#fff';
+      btn.style.borderColor='var(--red)';
+      timer=setTimeout(()=>{
+        confirming=false;
+        btn.textContent=originalText;
+        btn.style.background=originalBg;
+        btn.style.color=originalColor;
+        btn.style.borderColor=originalBorder;
+      },3000);
+    } else {
+      clearTimeout(timer);confirming=false;onConfirm();
+    }
+  };
+}
+
+// ══ HALAMAN MASTER JENIS KERUSAKAN ══
+function renderJenisKerusakan(){
+  renderGrupJenisDatalists();
+  const el=document.getElementById('jk-list');const cnt=document.getElementById('jk-cnt');if(!el)return;
+  const arr=[...allRusakJenisM].sort((a,b)=>(a.nama||'').localeCompare(b.nama||''));
+  if(cnt)cnt.textContent=arr.length;
+  const isAdmin=currentUser&&currentUser.role==='admin';
+  el.innerHTML=arr.length?arr.map(g=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px;border-bottom:1px solid #f4f6f9">
+    <span style="font-size:13px;font-weight:600;flex:1;min-width:0">${g.nama}</span>
+    ${isAdmin?`<div style="display:flex;gap:5px;flex-shrink:0">
+      <button class="edit-jk-btn" data-key="${g.key}" data-nama="${esc2(g.nama)}" style="font-size:11px;font-weight:700;color:#2d5f99;background:var(--bl);border:1.5px solid #b5d0ed;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit">Edit</button>
+      <button class="del-jk-btn" data-key="${g.key}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit;transition:all .15s">Hapus</button>
+    </div>`:''}
+  </div>`).join(''):emp('Belum ada jenis kerusakan. Tambahkan di atas.');
+  el.querySelectorAll('.edit-jk-btn').forEach(btn=>{
+    btn.onclick=function(){editJenisKerusakan(this.getAttribute('data-key'),this.getAttribute('data-nama'))};
+  });
+  el.querySelectorAll('.del-jk-btn').forEach(btn=>{
+    attachInlineDeleteConfirm(btn,async()=>{
+      const key=btn.getAttribute('data-key');
+      try{await db.ref('rusakMasterJenis/'+key).remove();toast('Jenis kerusakan dihapus')}catch(e){toast('Gagal','e')}
+    });
+  });
+}
+async function editJenisKerusakan(key,namaLama){
+  const baru=(prompt('Ubah jenis kerusakan:',namaLama)||'').trim();
+  if(!baru||baru===namaLama)return;
+  if(allRusakJenisM.find(g=>g.nama.toLowerCase()===baru.toLowerCase()&&g.key!==key))return toast('Jenis "'+baru+'" sudah ada','e');
+  try{
+    await db.ref('rusakMasterJenis/'+key).update({nama:baru});
+    toast('Jenis kerusakan diperbarui');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+async function tambahJenisKerusakan(){
+  const input=document.getElementById('jk-baru');
+  const nama=(input.value||'').trim();
+  if(!nama)return toast('Nama jenis kerusakan kosong','e');
+  if(allRusakJenisM.find(g=>g.nama.toLowerCase()===nama.toLowerCase()))return toast('Jenis kerusakan sudah ada','e');
+  try{
+    await db.ref('rusakMasterJenis').push({nama});
+    input.value='';input.focus();
+    toast('Jenis kerusakan "'+nama+'" ditambahkan');
+    // listener Firebase akan otomatis refresh list — tidak push manual (mencegah dobel)
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+function openAddRusakItem(){
+  renderGrupJenisDatalists();
+  renderBatchDatalist();
+  document.getElementById('rg-nama').value='';
+  document.getElementById('rg-jenis').value='';
+  document.getElementById('rg-batch').value='';
+  document.getElementById('rg-qty').value='';
+  openM('m-rusak-add');
+}
+
+async function saveAddRusakItem(){
+  let grup=document.getElementById('rg-nama').value.trim();
+  let jenis=document.getElementById('rg-jenis').value.trim();
+  const batch=document.getElementById('rg-batch').value.trim();
+  const qty=parseInt(document.getElementById('rg-qty').value,10)||0;
+  if(!grup)return toast('Nama SKU Grup wajib diisi','e');
+  if(!jenis)return toast('Jenis Kerusakan wajib diisi','e');
+  if(!batch)return toast('Batch wajib diisi','e');
+  if(rusakArr().find(r=>r.grup.toLowerCase()===grup.toLowerCase()&&r.jenis.toLowerCase()===jenis.toLowerCase()&&r.batch.toLowerCase()===batch.toLowerCase()))return toast('Item dengan kombinasi ini sudah ada','e');
+  try{
+    // Otomatis simpan ke master data kalau nama baru
+    jenis=await ensureInMasterJenis(jenis);
+    await db.ref('rusak').push({grup,jenis,batch,qty});
+    closeM('m-rusak-add');
+    toast('Item barang rusak ditambahkan');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+let editRusakKey='';
+function openEditRusakItem(key){
+  const r=allRusak[key];if(!r)return;
+  editRusakKey=key;
+  renderGrupJenisDatalists();
+  renderBatchDatalist();
+  document.getElementById('re-nama').value=r.grup||'';
+  document.getElementById('re-jenis').value=r.jenis||'';
+  document.getElementById('re-batch').value=r.batch||'';
+  document.getElementById('re-qty').value=r.qty||0;
+  openM('m-rusak-edit');
+}
+async function saveEditRusakItem(){
+  if(!editRusakKey)return;
+  let grup=document.getElementById('re-nama').value.trim();
+  let jenis=document.getElementById('re-jenis').value.trim();
+  const batch=document.getElementById('re-batch').value.trim();
+  const qty=parseInt(document.getElementById('re-qty').value,10)||0;
+  if(!grup)return toast('Nama SKU Grup wajib diisi','e');
+  if(!jenis)return toast('Jenis Kerusakan wajib diisi','e');
+  if(!batch)return toast('Batch wajib diisi','e');
+  try{
+    jenis=await ensureInMasterJenis(jenis);
+    await db.ref('rusak/'+editRusakKey).update({grup,jenis,batch,qty});
+    closeM('m-rusak-edit');
+    toast('Item diperbarui');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+function showRusakDetail(key){
+  const r=allRusak[key];if(!r)return;
+  const hist=rekonArrActive().filter(x=>x.itemKey===key);
+  const totalRekon=hist.filter(x=>x.approved).reduce((s,x)=>s+(x.qty||0),0);
+  document.getElementById('rusak-detail-title').textContent=r.grup+' — '+r.jenis+' ('+r.batch+')';
+  document.getElementById('rusak-detail-stok').textContent=r.qty||0;
+  document.getElementById('rusak-detail-rekon').textContent=totalRekon;
+  document.getElementById('rusak-detail-cnt').textContent=hist.length;
+  const list=document.getElementById('rusak-detail-list');
+  list.innerHTML=hist.length?hist.map(x=>`<div style="padding:11px 14px;border-bottom:1px solid #f4f6f9;display:flex;gap:10px">
+    <div style="width:8px;height:8px;border-radius:50%;background:${x.approved?'#4f7c6e':'#d4924a'};margin-top:5px"></div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:12px;font-weight:700">${x.karyawan}</div>
+      <div style="font-size:11px;color:var(--mu)">${x.tanggal} ${x.waktu}${x.ket&&x.ket!=='-'?' &bull; '+x.ket:''}</div>
+      <div style="font-size:10px;color:${x.approved?'#267a4a':'var(--mu)'};font-weight:700;margin-top:2px">${x.approved?'✓ Approved':'Menunggu approval'}</div>
+    </div>
+    <div style="text-align:right"><div style="font-size:14px;font-weight:900;color:#d95f5f">-${x.qty}</div></div>
+  </div>`).join(''):'<p style="text-align:center;color:var(--mu);padding:24px;font-size:13px">Belum ada rekondisi</p>';
+  openM('m-rusak-detail');
+}
+
+// ══ REKONDISI (Transaksi-style) ══
+function onRekonSearch(){rekonSearchQ=(document.getElementById('rekon-q')||{}).value?.toLowerCase()||'';pagerStateRusak.rekon=1;renderRekon()}
+function setRekonTab(tab,el){
+  rekonTab=tab;pagerStateRusak.rekon=1;
+  document.querySelectorAll('#rekon-tabs .chip').forEach(x=>x.classList.remove('on'));
+  if(el)el.classList.add('on');
+  renderRekon();
+}
+function renderRekonTabs(){
+  const el=document.getElementById('rekon-tabs');if(!el)return;
+  const pending=rekonArrActive().filter(t=>!t.approved).length;
+  const approved=rekonArrActive().filter(t=>t.approved).length;
+  const deleted=rekonArr().filter(t=>t.deleted).length;
+  el.innerHTML=
+    `<div class="chip${rekonTab==='pending'?' on':''}" onclick="setRekonTab('pending',this)">Belum Approve (${pending})</div>`+
+    `<div class="chip${rekonTab==='approved'?' on':''}" onclick="setRekonTab('approved',this)">Sudah Approve (${approved})</div>`+
+    `<div class="chip${rekonTab==='deleted'?' on':''}" onclick="setRekonTab('deleted',this)">Dihapus (${deleted})</div>`;
+  requestAnimationFrame(()=>updateChipArrows('rekon-tabs'));
+}
+
+function renderRekon(){
+  const el=document.getElementById('rekon-list');const cnt=document.getElementById('rekon-cnt');if(!el)return;
+  renderRekonTabs();
+  let base;
+  if(rekonTab==='deleted')base=rekonArr().filter(t=>t.deleted);
+  else if(rekonTab==='approved')base=rekonArrActive().filter(t=>t.approved);
+  else base=rekonArrActive().filter(t=>!t.approved);
+  const f=base.filter(t=>{
+    if(!rekonSearchQ)return true;
+    return[t.grup,t.jenis,t.batch,t.karyawan,t.ket].join(' ').toLowerCase().includes(rekonSearchQ);
+  });
+  const pg=paginate2(f,'rekon');
+  if(cnt)cnt.textContent=f.length+' rekondisi';
+  const isAdmin=currentUser&&currentUser.role==='admin';
+  const aBtn=document.getElementById('rekon-approve-all-btn');
+  if(aBtn)aBtn.style.display=isAdmin&&rekonTab==='pending'&&f.length>0?'inline-flex':'none';
+  if(!pg.count){el.innerHTML=emp(rekonTab==='deleted'?'Belum ada rekondisi dihapus':'Belum ada rekondisi');return}
+  el.innerHTML=pg.items.map(t=>{
+    const isDeleted=!!t.deleted;
+    const isApproved=!!t.approved;
+    return`<div style="padding:14px 16px;border-bottom:1px solid #f4f6f9">
+      <div style="display:flex;gap:10px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${isApproved?'#4f7c6e':'#d4924a'};margin-top:5px;flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700">${t.grup} — ${t.jenis}</div>
+          <div style="font-size:11px;color:var(--mu);margin-top:2px">Batch: ${t.batch} &bull; ${t.karyawan} &bull; ${t.tanggal} ${t.waktu}</div>
+          ${t.ket&&t.ket!=='-'?`<div style="font-size:11px;color:var(--mu)">${t.ket}</div>`:''}
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            ${isDeleted
+              ?`<span style="font-size:11px;font-weight:700;color:#9b2c2c">🗑 Dihapus ${t.deletedAt||''}${t.deletedBy?' oleh '+t.deletedBy:''}</span>
+                ${isAdmin?`<button class="rekon-restore-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #4f7c6e;background:var(--pl);color:var(--p2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Pulihkan</button>
+                <button class="rekon-harddel-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #d95f5f;background:var(--rl);color:#b83c3c;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Hapus Permanen</button>`:''}`
+              :isApproved
+                ?`<span style="font-size:11px;font-weight:700;color:#267a4a">✓ Approved ${t.approvedAt||''}</span>
+                  ${isAdmin?`<button class="rekon-unapprove-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid var(--bd);background:#fff;color:var(--mu);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Batal Approve</button>
+                  <button class="rekon-del-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #f0a0a0;background:var(--rl);color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Hapus</button>`:''}`
+                :`${isAdmin?`<button class="rekon-approve-btn" data-key="${t._key}" style="padding:5px 14px;border-radius:6px;border:1.5px solid #4f7c6e;background:#e8f3f0;color:#3a6358;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Approve</button>
+                  <button class="rekon-del-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #f0a0a0;background:var(--rl);color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Hapus</button>`:'<span style="font-size:11px;color:var(--mu)">Menunggu approval</span>'}`
+            }
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:16px;font-weight:900;color:#d95f5f">-${t.qty}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('')+pagerHTML2('rekon',pg.page,pg.total,pg.count);
+  attachRekonButtons();
+}
+
+function attachRekonButtons(){
+  document.querySelectorAll('.rekon-approve-btn').forEach(btn=>{
+    btn.onclick=function(){approveRekon(this.getAttribute('data-key'))};
+  });
+  document.querySelectorAll('.rekon-unapprove-btn').forEach(btn=>{
+    btn.onclick=function(){unapproveRekon(this.getAttribute('data-key'))};
+  });
+  document.querySelectorAll('.rekon-del-btn').forEach(btn=>{
+    btn.onclick=function(){delRekon(this.getAttribute('data-key'))};
+  });
+  document.querySelectorAll('.rekon-restore-btn').forEach(btn=>{
+    btn.onclick=function(){restoreRekon(this.getAttribute('data-key'))};
+  });
+  document.querySelectorAll('.rekon-harddel-btn').forEach(btn=>{
+    btn.onclick=function(){hardDelRekon(this.getAttribute('data-key'))};
+  });
+}
+
+// ══ SEARCHABLE DROPDOWN untuk pilih barang rusak di form Rekondisi ══
+// Cari item barang rusak yang cocok dengan grup + jenis + batch yang diketik
+function matchRekonItem(){
+  const grup=(document.getElementById('rk-grup').value||'').trim().toLowerCase();
+  const jenis=(document.getElementById('rk-jenis').value||'').trim().toLowerCase();
+  const batch=(document.getElementById('rk-batch').value||'').trim().toLowerCase();
+  // Update datalist batch supaya hanya batch yang cocok grup+jenis muncul
+  updateRekonBatchList(grup,jenis);
+  let key='';
+  if(grup&&jenis&&batch){
+    const found=rusakArr().find(r=>
+      (r.grup||'').toLowerCase()===grup&&
+      (r.jenis||'').toLowerCase()===jenis&&
+      (r.batch||'').toLowerCase()===batch
+    );
+    if(found)key=found._key;
+  }
+  document.getElementById('rk-item-key').value=key;
+  updRekonInfo();
+}
+
+function updateRekonBatchList(grup,jenis){
+  const dl=document.getElementById('rusak-batch-list');
+  if(!dl)return;
+  let items=rusakArr();
+  if(grup)items=items.filter(r=>(r.grup||'').toLowerCase()===grup);
+  if(jenis)items=items.filter(r=>(r.jenis||'').toLowerCase()===jenis);
+  const batches=[...new Set(items.map(r=>r.batch).filter(Boolean))].sort();
+  dl.innerHTML=batches.map(b=>`<option value="${esc2(b)}">`).join('');
+}
+
+function updRekonInfo(){
+  const key=document.getElementById('rk-item-key').value;
+  const r=allRusak[key];
+  const info=document.getElementById('rk-info');
+  const submit=document.getElementById('rk-submit');
+  const grup=(document.getElementById('rk-grup').value||'').trim();
+  const jenis=(document.getElementById('rk-jenis').value||'').trim();
+  const batch=(document.getElementById('rk-batch').value||'').trim();
+  if(info){
+    if(r){
+      const col=(r.qty||0)<=0?'#d95f5f':((r.qty||0)<=10?'#d4924a':'#4f7c6e');
+      info.innerHTML=`<div style="background:#eef7f2;border:1.5px solid #b2dfca;border-radius:10px;padding:10px 12px">
+        <div style="display:flex;justify-content:space-between;gap:8px"><span style="color:var(--mu)">Stok Tersedia</span><strong style="color:${col};font-size:15px">${r.qty||0} pcs</strong></div>
+      </div>`;
+    } else if(grup&&jenis&&batch){
+      info.innerHTML=`<div style="background:#fdf0f0;border:1.5px solid #f0c0c0;border-radius:10px;padding:10px 12px;color:#b83c3c;font-weight:600">⚠ Item tidak ditemukan. Pastikan SKU Grup, Jenis Kerusakan, dan Batch persis sama dengan yang ada di Stok Barang Rusak.</div>`;
+    } else {
+      info.innerHTML='<div style="color:var(--mu)">Isi SKU Grup, Jenis Kerusakan, dan Batch untuk cari item.</div>';
+    }
+  }
+  if(submit)submit.disabled=!r||(r.qty||0)<=0;
+}
+
+async function doRekondisi(){
+  const key=document.getElementById('rk-item-key').value;
+  const qty=parseInt(document.getElementById('rk-qty').value,10)||0;
+  const ket=document.getElementById('rk-ket').value||'-';
+  if(!key)return toast('Item barang rusak tidak ditemukan. Cek SKU/Jenis/Batch.','e');
+  if(qty<1)return toast('Jumlah harus > 0','e');
+  const r=allRusak[key];
+  if(!r||(r.qty||0)<=0)return toast('Stok 0','e');
+  if((r.qty||0)<qty)return toast('Stok tidak cukup: '+r.qty,'e');
+  try{
+    await db.ref('rekondisi').push({
+      ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,
+      itemKey:key,grup:r.grup,jenis:r.jenis,batch:r.batch,qty,ket,approved:false
+    });
+    toast('Rekondisi disimpan, menunggu approval');closeM('m-rekondisi');
+    document.getElementById('rk-qty').value='';
+    document.getElementById('rk-ket').value='';
+    document.getElementById('rk-item-key').value='';
+    document.getElementById('rk-grup').value='';
+    document.getElementById('rk-jenis').value='';
+    document.getElementById('rk-batch').value='';
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+async function approveRekon(key){
+  try{
+    const t=allRekon[key];if(!t)return;
+    const r=allRusak[t.itemKey];
+    if(!r)return toast('Item barang rusak tidak ditemukan','e');
+    if((r.qty||0)<t.qty)return toast('Stok tidak cukup untuk approve','e');
+    await db.ref('rekondisi/'+key).update({approved:true,approvedAt:nowDate()+' '+nowTime()});
+    await db.ref('rusak/'+t.itemKey+'/qty').set(Math.max(0,(r.qty||0)-t.qty));
+    toast('Rekondisi di-approve, stok terpotong');
+  }catch(e){toast('Gagal','e')}
+}
+
+async function approveAllRekon(){
+  const pending=rekonArrActive().filter(t=>!t.approved);
+  if(!pending.length)return toast('Tidak ada yang perlu di-approve');
+  const at=nowDate()+' '+nowTime();
+  let ok=0,skip=0;
+  try{
+    for(const t of pending){
+      const r=allRusak[t.itemKey];
+      if(!r||(r.qty||0)<t.qty){skip++;continue}
+      await db.ref('rekondisi/'+t._key).update({approved:true,approvedAt:at});
+      const newQty=Math.max(0,(r.qty||0)-t.qty);
+      await db.ref('rusak/'+t.itemKey+'/qty').set(newQty);
+      r.qty=newQty;
+      ok++;
+    }
+    toast(skip?('Approve '+ok+', '+skip+' dilewati karena stok tidak cukup'):('Semua di-approve ('+ok+')'));
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+async function unapproveRekon(key){
+  const t=allRekon[key];if(!t)return;
+  showConfirm('Batalkan approval?','Stok barang rusak akan dikembalikan.',async()=>{
+    try{
+      const r=allRusak[t.itemKey];
+      if(r)await db.ref('rusak/'+t.itemKey+'/qty').set((r.qty||0)+t.qty);
+      await db.ref('rekondisi/'+key).update({approved:false,approvedAt:''});
+      toast('Approval dibatalkan');
+    }catch(e){toast('Gagal','e')}
+  });
+}
+
+async function delRekon(key){
+  const t=allRekon[key];if(!t)return;
+  showConfirm('Hapus rekondisi?','Akan dipindah ke tab Dihapus. Stok dikembalikan kalau sudah approved.',async()=>{
+    try{
+      if(t.approved){
+        const r=allRusak[t.itemKey];
+        if(r)await db.ref('rusak/'+t.itemKey+'/qty').set((r.qty||0)+t.qty);
+      }
+      await db.ref('rekondisi/'+key).update({deleted:true,deletedAt:nowDate()+' '+nowTime(),deletedBy:currentUser.nama,approved:false});
+      toast('Rekondisi dipindah ke Dihapus');
+    }catch(e){toast('Gagal: '+e.message,'e')}
+  });
+}
+
+async function restoreRekon(key){
+  showConfirm('Pulihkan rekondisi?','Akan kembali ke "Belum Approve".',async()=>{
+    try{
+      await db.ref('rekondisi/'+key).update({deleted:null,deletedAt:null,deletedBy:null});
+      toast('Rekondisi dipulihkan');
+    }catch(e){toast('Gagal','e')}
+  });
+}
+
+async function hardDelRekon(key){
+  showConfirm('Hapus PERMANEN?','Tidak bisa dipulihkan lagi.',async()=>{
+    try{await db.ref('rekondisi/'+key).remove();toast('Dihapus permanen')}catch(e){toast('Gagal','e')}
+  });
+}
+
+// ══ PAGINATION HELPER (rusak & rekon pakai PG_SIZE yang sama) ══
+function paginate2(arr,key){
+  const total=Math.max(1,Math.ceil(arr.length/PG_SIZE));
+  if(pagerStateRusak[key]>total)pagerStateRusak[key]=total;
+  if(pagerStateRusak[key]<1)pagerStateRusak[key]=1;
+  const start=(pagerStateRusak[key]-1)*PG_SIZE;
+  return{items:arr.slice(start,start+PG_SIZE),page:pagerStateRusak[key],total,count:arr.length};
+}
+function pagerHTML2(key,page,total,count){
+  if(count===0||total<=1)return'';
+  return`<div class="pager">
+    <button class="pager-btn" onclick="setPageRusak('${key}',${page-1})" ${page<=1?'disabled':''}>‹ Sebelum</button>
+    <span class="pager-info">Hal ${page} / ${total}</span>
+    <button class="pager-btn" onclick="setPageRusak('${key}',${page+1})" ${page>=total?'disabled':''}>Lanjut ›</button>
+  </div>`;
+}
+function setPageRusak(key,page){
+  pagerStateRusak[key]=Math.max(1,page);
+  if(key==='rusak')renderRusak();
+  if(key==='rekon')renderRekon();
+  if(key==='trxrusak')renderTrxRusak();
+  const mainEl=document.querySelector('.main');
+  if(mainEl)mainEl.scrollTo({top:0,behavior:'smooth'});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ══ TRANSAKSI BARANG RUSAK (Input Masuk / Potong Keluar) ══
+let trxRusakSearchQ='',trxRusakTab='pending';
+function trxRusakArr(){return Object.values(allTrxRusak).sort((a,b)=>(b.ts||0)-(a.ts||0))}
+function trxRusakArrActive(){return trxRusakArr().filter(t=>!t.deleted)}
+function onTrxRusakSearch(){trxRusakSearchQ=(document.getElementById('trxrusak-q')||{}).value?.toLowerCase()||'';pagerStateRusak.trxrusak=1;renderTrxRusak()}
+function setTrxRusakTab(tab,el){
+  trxRusakTab=tab;pagerStateRusak.trxrusak=1;
+  document.querySelectorAll('#trxrusak-tabs .chip').forEach(x=>x.classList.remove('on'));
+  if(el)el.classList.add('on');
+  renderTrxRusak();
+}
+function renderTrxRusakTabs(){
+  const el=document.getElementById('trxrusak-tabs');if(!el)return;
+  const pending=trxRusakArrActive().filter(t=>!t.approved).length;
+  const approved=trxRusakArrActive().filter(t=>t.approved).length;
+  const deleted=trxRusakArr().filter(t=>t.deleted).length;
+  el.innerHTML=
+    `<div class="chip${trxRusakTab==='pending'?' on':''}" onclick="setTrxRusakTab('pending',this)">Belum Approve (${pending})</div>`+
+    `<div class="chip${trxRusakTab==='approved'?' on':''}" onclick="setTrxRusakTab('approved',this)">Sudah Approve (${approved})</div>`+
+    `<div class="chip${trxRusakTab==='deleted'?' on':''}" onclick="setTrxRusakTab('deleted',this)">Dihapus (${deleted})</div>`;
+  requestAnimationFrame(()=>updateChipArrows('trxrusak-tabs'));
+}
+function renderTrxRusak(){
+  const el=document.getElementById('trxrusak-list');const cnt=document.getElementById('trxrusak-cnt');if(!el)return;
+  renderTrxRusakTabs();
+  let base;
+  if(trxRusakTab==='deleted')base=trxRusakArr().filter(t=>t.deleted);
+  else if(trxRusakTab==='approved')base=trxRusakArrActive().filter(t=>t.approved);
+  else base=trxRusakArrActive().filter(t=>!t.approved);
+  const f=base.filter(t=>{
+    if(!trxRusakSearchQ)return true;
+    return[t.grup,t.jenis,t.batch,t.karyawan,t.ket].join(' ').toLowerCase().includes(trxRusakSearchQ);
+  });
+  const pg=paginate2(f,'trxrusak');
+  if(cnt)cnt.textContent=f.length+' transaksi';
+  const isAdmin=currentUser&&currentUser.role==='admin';
+  const aBtn=document.getElementById('trxrusak-approve-all-btn');
+  if(aBtn)aBtn.style.display=isAdmin&&trxRusakTab==='pending'&&f.length>0?'inline-flex':'none';
+  if(!pg.count){el.innerHTML=emp(trxRusakTab==='deleted'?'Belum ada transaksi dihapus':'Belum ada transaksi');return}
+  el.innerHTML=pg.items.map(t=>{
+    const isDeleted=!!t.deleted;
+    const isApproved=!!t.approved;
+    const masuk=t.tipe==='masuk';
+    return`<div style="padding:14px 16px;border-bottom:1px solid #f4f6f9">
+      <div style="display:flex;gap:10px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${masuk?'#4f7c6e':'#d95f5f'};margin-top:5px;flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700">${t.grup} — ${t.jenis}</div>
+          <div style="font-size:11px;color:var(--mu);margin-top:2px">Batch: ${t.batch} &bull; ${t.karyawan} &bull; ${t.tanggal} ${t.waktu}</div>
+          ${t.ket&&t.ket!=='-'?`<div style="font-size:11px;color:var(--mu)">${t.ket}</div>`:''}
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            ${isDeleted
+              ?`<span style="font-size:11px;font-weight:700;color:#9b2c2c">🗑 Dihapus ${t.deletedAt||''}${t.deletedBy?' oleh '+t.deletedBy:''}</span>
+                ${isAdmin?`<button class="trxr-restore-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #4f7c6e;background:var(--pl);color:var(--p2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Pulihkan</button>
+                <button class="trxr-harddel-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #d95f5f;background:var(--rl);color:#b83c3c;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Hapus Permanen</button>`:''}`
+              :isApproved
+                ?`<span style="font-size:11px;font-weight:700;color:#267a4a">✓ Approved ${t.approvedAt||''}</span>
+                  ${isAdmin?`<button class="trxr-unapprove-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid var(--bd);background:#fff;color:var(--mu);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Batal Approve</button>
+                  <button class="trxr-del-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #f0a0a0;background:var(--rl);color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Hapus</button>`:''}`
+                :`${isAdmin?`<button class="trxr-approve-btn" data-key="${t._key}" style="padding:5px 14px;border-radius:6px;border:1.5px solid #4f7c6e;background:#e8f3f0;color:#3a6358;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Approve</button>
+                  <button class="trxr-del-btn" data-key="${t._key}" style="padding:5px 12px;border-radius:6px;border:1.5px solid #f0a0a0;background:var(--rl);color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Hapus</button>`:'<span style="font-size:11px;color:var(--mu)">Menunggu approval</span>'}`
+            }
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:11px;font-weight:700;color:${masuk?'#3a6358':'#d95f5f'}">${masuk?'MASUK':'KELUAR'}</div>
+          <div style="font-size:16px;font-weight:900;color:${masuk?'#3a6358':'#d95f5f'}">${masuk?'+':'-'}${t.qty}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('')+pagerHTML2('trxrusak',pg.page,pg.total,pg.count);
+  attachTrxRusakButtons();
+}
+function attachTrxRusakButtons(){
+  document.querySelectorAll('.trxr-approve-btn').forEach(b=>{b.onclick=function(){approveTrxRusak(this.getAttribute('data-key'))}});
+  document.querySelectorAll('.trxr-unapprove-btn').forEach(b=>{b.onclick=function(){unapproveTrxRusak(this.getAttribute('data-key'))}});
+  document.querySelectorAll('.trxr-del-btn').forEach(b=>{b.onclick=function(){delTrxRusak(this.getAttribute('data-key'))}});
+  document.querySelectorAll('.trxr-restore-btn').forEach(b=>{b.onclick=function(){restoreTrxRusak(this.getAttribute('data-key'))}});
+  document.querySelectorAll('.trxr-harddel-btn').forEach(b=>{b.onclick=function(){hardDelTrxRusak(this.getAttribute('data-key'))}});
+}
+
+// Cari / buat item barang rusak berdasarkan grup+jenis+batch
+function findRusakItem(grup,jenis,batch){
+  return rusakArr().find(r=>
+    (r.grup||'').toLowerCase()===grup.toLowerCase()&&
+    (r.jenis||'').toLowerCase()===jenis.toLowerCase()&&
+    (r.batch||'').toLowerCase()===batch.toLowerCase()
+  );
+}
+
+async function doRusakIn(){
+  const grup=(document.getElementById('ri-grup').value||'').trim();
+  const jenis=(document.getElementById('ri-jenis').value||'').trim();
+  const batch=(document.getElementById('ri-batch').value||'').trim();
+  const qty=parseInt(document.getElementById('ri-qty').value,10)||0;
+  const ket=document.getElementById('ri-ket').value||'-';
+  if(!grup||!jenis||!batch)return toast('SKU Grup, Jenis, dan Batch wajib diisi','e');
+  if(qty<1)return toast('Jumlah harus > 0','e');
+  try{
+    await ensureInMasterJenis(jenis);
+    await db.ref('transaksiRusak').push({
+      ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,
+      tipe:'masuk',grup,jenis,batch,qty,ket,approved:false
+    });
+    toast('Transaksi masuk disimpan, menunggu approval');closeM('m-rusak-in');
+    ['ri-grup','ri-jenis','ri-batch','ri-qty','ri-ket'].forEach(id=>document.getElementById(id).value='');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+function matchRusakOutItem(){
+  const grup=(document.getElementById('ro-grup').value||'').trim();
+  const jenis=(document.getElementById('ro-jenis').value||'').trim();
+  const batch=(document.getElementById('ro-batch').value||'').trim();
+  updateRusakOutBatchList(grup.toLowerCase(),jenis.toLowerCase());
+  const found=(grup&&jenis&&batch)?findRusakItem(grup,jenis,batch):null;
+  document.getElementById('ro-item-key').value=found?found._key:'';
+  const info=document.getElementById('ro-info');
+  const submit=document.getElementById('ro-submit');
+  if(info){
+    if(found){
+      const col=(found.qty||0)<=0?'#d95f5f':((found.qty||0)<=10?'#d4924a':'#4f7c6e');
+      info.innerHTML=`<div style="background:#fdf0f0;border:1.5px solid #f0c0c0;border-radius:10px;padding:10px 12px"><div style="display:flex;justify-content:space-between"><span style="color:var(--mu)">Stok Tersedia</span><strong style="color:${col};font-size:15px">${found.qty||0} pcs</strong></div></div>`;
+    } else if(grup&&jenis&&batch){
+      info.innerHTML='<div style="color:#b83c3c;font-weight:600">⚠ Item tidak ditemukan di stok barang rusak.</div>';
+    } else info.innerHTML='';
+  }
+  if(submit)submit.disabled=!found||(found.qty||0)<=0;
+}
+function updateRusakOutBatchList(grup,jenis){
+  const dl=document.getElementById('rusak-batch-list');
+  if(!dl)return;
+  let items=rusakArr();
+  if(grup)items=items.filter(r=>(r.grup||'').toLowerCase()===grup);
+  if(jenis)items=items.filter(r=>(r.jenis||'').toLowerCase()===jenis);
+  const batches=[...new Set(items.map(r=>r.batch).filter(Boolean))].sort();
+  dl.innerHTML=batches.map(b=>`<option value="${esc2(b)}">`).join('');
+}
+async function doRusakOut(){
+  const key=document.getElementById('ro-item-key').value;
+  const grup=(document.getElementById('ro-grup').value||'').trim();
+  const jenis=(document.getElementById('ro-jenis').value||'').trim();
+  const batch=(document.getElementById('ro-batch').value||'').trim();
+  const qty=parseInt(document.getElementById('ro-qty').value,10)||0;
+  const ket=document.getElementById('ro-ket').value||'-';
+  if(!key)return toast('Item tidak ditemukan. Cek SKU/Jenis/Batch.','e');
+  if(qty<1)return toast('Jumlah harus > 0','e');
+  const r=allRusak[key];
+  if(!r||(r.qty||0)<=0)return toast('Stok 0','e');
+  if((r.qty||0)<qty)return toast('Stok tidak cukup: '+r.qty,'e');
+  try{
+    await db.ref('transaksiRusak').push({
+      ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,
+      tipe:'keluar',itemKey:key,grup,jenis,batch,qty,ket,approved:false
+    });
+    toast('Transaksi potong disimpan, menunggu approval');closeM('m-rusak-out');
+    ['ro-grup','ro-jenis','ro-batch','ro-qty','ro-ket','ro-item-key'].forEach(id=>document.getElementById(id).value='');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+async function approveTrxRusak(key){
+  const t=allTrxRusak[key];if(!t)return;
+  try{
+    if(t.tipe==='masuk'){
+      let item=findRusakItem(t.grup,t.jenis,t.batch);
+      if(item){
+        await db.ref('rusak/'+item._key+'/qty').set((item.qty||0)+t.qty);
+      } else {
+        await db.ref('rusak').push({grup:t.grup,jenis:t.jenis,batch:t.batch,qty:t.qty});
+      }
+    } else {
+      const item=t.itemKey?allRusak[t.itemKey]:findRusakItem(t.grup,t.jenis,t.batch);
+      if(!item)return toast('Item stok tidak ditemukan','e');
+      if((item.qty||0)<t.qty)return toast('Stok tidak cukup untuk approve','e');
+      await db.ref('rusak/'+item._key+'/qty').set(Math.max(0,(item.qty||0)-t.qty));
+    }
+    await db.ref('transaksiRusak/'+key).update({approved:true,approvedAt:nowDate()+' '+nowTime()});
+    toast('Transaksi di-approve, stok diperbarui');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+async function approveAllTrxRusak(){
+  const pending=trxRusakArrActive().filter(t=>!t.approved);
+  if(!pending.length)return toast('Tidak ada yang perlu di-approve');
+  const at=nowDate()+' '+nowTime();
+  let ok=0,skip=0;
+  try{
+    for(const t of pending){
+      if(t.tipe==='masuk'){
+        let item=findRusakItem(t.grup,t.jenis,t.batch);
+        if(item){const nq=(item.qty||0)+t.qty;await db.ref('rusak/'+item._key+'/qty').set(nq);item.qty=nq;}
+        else{const ref=await db.ref('rusak').push({grup:t.grup,jenis:t.jenis,batch:t.batch,qty:t.qty});allRusak[ref.key]={grup:t.grup,jenis:t.jenis,batch:t.batch,qty:t.qty,_key:ref.key};}
+        await db.ref('transaksiRusak/'+t._key).update({approved:true,approvedAt:at});ok++;
+      } else {
+        const item=t.itemKey?allRusak[t.itemKey]:findRusakItem(t.grup,t.jenis,t.batch);
+        if(!item||(item.qty||0)<t.qty){skip++;continue}
+        const nq=Math.max(0,(item.qty||0)-t.qty);
+        await db.ref('rusak/'+item._key+'/qty').set(nq);item.qty=nq;
+        await db.ref('transaksiRusak/'+t._key).update({approved:true,approvedAt:at});ok++;
+      }
+    }
+    toast(skip?('Approve '+ok+', '+skip+' dilewati (stok kurang)'):('Semua di-approve ('+ok+')'));
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+async function unapproveTrxRusak(key){
+  const t=allTrxRusak[key];if(!t)return;
+  showConfirm('Batalkan approval?','Stok akan dikembalikan ke kondisi sebelumnya.',async()=>{
+    try{
+      const item=t.itemKey?allRusak[t.itemKey]:findRusakItem(t.grup,t.jenis,t.batch);
+      if(item){
+        const nq=t.tipe==='masuk'?Math.max(0,(item.qty||0)-t.qty):(item.qty||0)+t.qty;
+        await db.ref('rusak/'+item._key+'/qty').set(nq);
+      }
+      await db.ref('transaksiRusak/'+key).update({approved:false,approvedAt:''});
+      toast('Approval dibatalkan');
+    }catch(e){toast('Gagal','e')}
+  });
+}
+async function delTrxRusak(key){
+  const t=allTrxRusak[key];if(!t)return;
+  showConfirm('Hapus transaksi?','Dipindah ke tab Dihapus. Stok dikembalikan kalau sudah approved.',async()=>{
+    try{
+      if(t.approved){
+        const item=t.itemKey?allRusak[t.itemKey]:findRusakItem(t.grup,t.jenis,t.batch);
+        if(item){
+          const nq=t.tipe==='masuk'?Math.max(0,(item.qty||0)-t.qty):(item.qty||0)+t.qty;
+          await db.ref('rusak/'+item._key+'/qty').set(nq);
+        }
+      }
+      await db.ref('transaksiRusak/'+key).update({deleted:true,deletedAt:nowDate()+' '+nowTime(),deletedBy:currentUser.nama,approved:false});
+      toast('Transaksi dipindah ke Dihapus');
+    }catch(e){toast('Gagal','e')}
+  });
+}
+async function restoreTrxRusak(key){
+  showConfirm('Pulihkan transaksi?','Kembali ke "Belum Approve".',async()=>{
+    try{await db.ref('transaksiRusak/'+key).update({deleted:null,deletedAt:null,deletedBy:null});toast('Dipulihkan')}catch(e){toast('Gagal','e')}
+  });
+}
+async function hardDelTrxRusak(key){
+  showConfirm('Hapus PERMANEN?','Tidak bisa dipulihkan lagi.',async()=>{
+    try{await db.ref('transaksiRusak/'+key).remove();toast('Dihapus permanen')}catch(e){toast('Gagal','e')}
+  });
+}
+
+// ══ LAPORAN QC ══
+let qcSearchQ='',qcBatchFilter='';
+const pagerStateQc={qc:1};
+function qcArr(){return Object.values(allQc).sort((a,b)=>(b.ts||0)-(a.ts||0))}
+function qcPersen(rusak,total){const t=parseFloat(total)||0;if(t<=0)return 0;return(parseFloat(rusak)||0)/t*100}
+function onQcSearch(){qcSearchQ=(document.getElementById('qc-q')||{}).value?.toLowerCase()||'';pagerStateQc.qc=1;renderQcLog()}
+function setQcBatch(b,el){qcBatchFilter=b;pagerStateQc.qc=1;document.querySelectorAll('#qc-chips .chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderQcLog()}
+
+function updQcPersen(){
+  const rusak=parseFloat(document.getElementById('qc-rusak').value)||0;
+  const total=parseFloat(document.getElementById('qc-total').value)||0;
+  const el=document.getElementById('qc-persen-info');
+  if(!el)return;
+  if(total>0)el.textContent='% Rusak: '+qcPersen(rusak,total).toFixed(2)+'%';
+  else el.textContent='';
+}
+
+function renderQcBatchList(){
+  const dl=document.getElementById('qc-batch-list');
+  if(dl){
+    // Gabungkan batch dari master batch + batch yang sudah pernah dipakai di QC
+    const fromMaster=batchArr().map(b=>b.kode).filter(Boolean);
+    const fromQc=qcArr().map(q=>q.batch).filter(Boolean);
+    const batches=[...new Set([...fromMaster,...fromQc])].sort();
+    dl.innerHTML=batches.map(b=>`<option value="${esc2(b)}">`).join('');
+  }
+}
+function renderQcChips(){
+  const ch=document.getElementById('qc-chips');
+  if(!ch)return;
+  const batches=[...new Set(qcArr().map(q=>q.batch).filter(Boolean))].sort();
+  ch.innerHTML=
+    `<div class="chip${!qcBatchFilter?' on':''}" onclick="setQcBatch('',this)">Semua</div>`+
+    batches.map(b=>`<div class="chip${qcBatchFilter===b?' on':''}" onclick="setQcBatch('${esc2(b)}',this)">${b}</div>`).join('');
+  requestAnimationFrame(()=>updateChipArrows('qc-chips'));
+}
+
+function renderQcLog(){
+  renderQcChips();renderQcBatchList();
+  const el=document.getElementById('qc-list');const cnt=document.getElementById('qc-cnt');if(!el)return;
+  let arr=qcArr().filter(q=>{
+    const mq=!qcSearchQ||[q.batch,q.produk,q.jenis].join(' ').toLowerCase().includes(qcSearchQ);
+    return mq&&(!qcBatchFilter||q.batch===qcBatchFilter);
+  });
+  if(cnt)cnt.textContent=arr.length+' catatan';
+  const pg=paginateQc(arr);
+  const isAdmin=currentUser&&currentUser.role==='admin';
+  if(!pg.count){el.innerHTML=emp('Belum ada catatan QC');return}
+  el.innerHTML=pg.items.map(q=>{
+    const p=qcPersen(q.qtyRusak,q.totalQc);
+    const col=p>=5?'#d95f5f':(p>=2?'#d4924a':'#4f7c6e');
+    return`<div style="padding:12px 14px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <div style="font-size:13px;font-weight:700">${q.produk} <span style="font-weight:400;color:var(--mu)">— ${q.jenis}</span></div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px">Batch: ${q.batch} &bull; ${q.tanggal||'-'}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+        <div style="text-align:right">
+          <div style="font-size:13px"><strong style="color:#d95f5f">${q.qtyRusak}</strong> <span style="color:var(--mu)">/ ${q.totalQc}</span></div>
+          <div style="font-size:14px;font-weight:900;color:${col}">${p.toFixed(2)}%</div>
+        </div>
+        ${isAdmin?`<div style="display:flex;gap:5px">
+          <button class="qc-edit-btn" data-key="${q._key}" style="font-size:11px;font-weight:700;color:#2d5f99;background:var(--bl);border:1.5px solid #b5d0ed;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Edit</button>
+          <button class="qc-del-btn" data-key="${q._key}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Hapus</button>
+        </div>`:''}
+      </div>
+    </div>`;
+  }).join('')+pagerHTMLQc(pg.page,pg.total,pg.count);
+  document.querySelectorAll('.qc-edit-btn').forEach(b=>{b.onclick=function(){openEditQc(this.getAttribute('data-key'))}});
+  document.querySelectorAll('.qc-del-btn').forEach(b=>{b.onclick=function(){
+    const key=this.getAttribute('data-key');
+    showConfirm('Hapus catatan QC ini?','Data tidak dapat dikembalikan.',async()=>{
+      try{await db.ref('qc/'+key).remove();toast('Catatan dihapus')}catch(e){toast('Gagal','e')}
+    });
+  }});
+}
+function paginateQc(arr){
+  const total=Math.max(1,Math.ceil(arr.length/PG_SIZE));
+  if(pagerStateQc.qc>total)pagerStateQc.qc=total;
+  if(pagerStateQc.qc<1)pagerStateQc.qc=1;
+  const start=(pagerStateQc.qc-1)*PG_SIZE;
+  return{items:arr.slice(start,start+PG_SIZE),page:pagerStateQc.qc,total,count:arr.length};
+}
+function pagerHTMLQc(page,total,count){
+  if(count===0||total<=1)return'';
+  return`<div class="pager">
+    <button class="pager-btn" onclick="setPageQc(${page-1})" ${page<=1?'disabled':''}>‹ Sebelum</button>
+    <span class="pager-info">Hal ${page} / ${total}</span>
+    <button class="pager-btn" onclick="setPageQc(${page+1})" ${page>=total?'disabled':''}>Lanjut ›</button>
+  </div>`;
+}
+function setPageQc(page){
+  pagerStateQc.qc=Math.max(1,page);renderQcLog();
+  const m=document.querySelector('.main');if(m)m.scrollTo({top:0,behavior:'smooth'});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function openEditQc(key){
+  const q=allQc[key];if(!q)return;
+  document.getElementById('qc-modal-title').textContent='Edit Laporan QC';
+  document.getElementById('qc-edit-key').value=key;
+  document.getElementById('qc-tgl').value=q.tglISO||'';
+  document.getElementById('qc-batch').value=q.batch||'';
+  document.getElementById('qc-produk').value=q.produk||'';
+  document.getElementById('qc-jenis').value=q.jenis||'';
+  document.getElementById('qc-rusak').value=q.qtyRusak||'';
+  document.getElementById('qc-total').value=q.totalQc||'';
+  renderGrupJenisDatalists();renderQcBatchList();updQcPersen();
+  openM('m-qc');
+}
+
+async function doQcInput(){
+  const key=document.getElementById('qc-edit-key').value;
+  const tglISO=document.getElementById('qc-tgl').value;
+  const batch=(document.getElementById('qc-batch').value||'').trim();
+  const produk=(document.getElementById('qc-produk').value||'').trim();
+  const jenis=(document.getElementById('qc-jenis').value||'').trim();
+  const qtyRusak=parseInt(document.getElementById('qc-rusak').value,10)||0;
+  const totalQc=parseInt(document.getElementById('qc-total').value,10)||0;
+  if(!batch||!produk||!jenis)return toast('Batch, Produk, dan Jenis wajib diisi','e');
+  if(totalQc<1)return toast('Total QC harus > 0','e');
+  if(qtyRusak>totalQc)return toast('Qty rusak tidak boleh lebih dari Total QC','e');
+  // Format tanggal dd/mm/yyyy dari ISO
+  let tanggal='-';
+  if(tglISO){const[y,m,d]=tglISO.split('-');tanggal=d+'/'+m+'/'+y}
+  try{
+    await ensureInMasterJenis(jenis);
+    const data={tglISO:tglISO||'',tanggal,batch,produk,jenis,qtyRusak,totalQc,by:currentUser.nama};
+    if(key){
+      await db.ref('qc/'+key).update(data);
+      toast('Catatan QC diperbarui');
+    } else {
+      data.ts=Date.now();
+      await db.ref('qc').push(data);
+      toast('Catatan QC disimpan');
+    }
+    closeM('m-qc');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+function renderQcDash(){
+  const arr=qcArr();
+  const totalQc=arr.reduce((s,q)=>s+(parseInt(q.totalQc,10)||0),0);
+  const totalRusak=arr.reduce((s,q)=>s+(parseInt(q.qtyRusak,10)||0),0);
+  const setTxt=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  setTxt('qcd-totalqc',totalQc);
+  setTxt('qcd-totalrusak',totalRusak);
+  setTxt('qcd-persen',(totalQc>0?(totalRusak/totalQc*100):0).toFixed(2)+'%');
+  setTxt('qcd-count',arr.length);
+  // Breakdown helper
+  const breakdown=(field)=>{
+    const map={};
+    arr.forEach(q=>{
+      const k=q[field]||'-';
+      if(!map[k])map[k]={rusak:0,total:0};
+      map[k].rusak+=parseInt(q.qtyRusak,10)||0;
+      map[k].total+=parseInt(q.totalQc,10)||0;
+    });
+    return Object.entries(map).sort((a,b)=>b[1].rusak-a[1].rusak);
+  };
+  const renderBreak=(id,field)=>{
+    const el=document.getElementById(id);if(!el)return;
+    const rows=breakdown(field);
+    if(!rows.length){el.innerHTML=emp('Belum ada data');return}
+    const maxRusak=Math.max(...rows.map(r=>r[1].rusak),1);
+    el.innerHTML=rows.map(([nama,d])=>{
+      const p=d.total>0?(d.rusak/d.total*100):0;
+      const barW=Math.round(d.rusak/maxRusak*100);
+      const col=p>=5?'#d95f5f':(p>=2?'#d4924a':'#4f7c6e');
+      return`<div style="padding:10px 14px;border-bottom:1px solid #f4f6f9">
+        <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:5px">
+          <span style="font-size:12px;font-weight:700">${nama}</span>
+          <span style="font-size:12px;font-weight:800;color:${col}">${d.rusak} / ${d.total} (${p.toFixed(2)}%)</span>
+        </div>
+        <div style="height:7px;background:#eef2f7;border-radius:4px;overflow:hidden"><div style="height:100%;width:${barW}%;background:${col}"></div></div>
+      </div>`;
+    }).join('');
+  };
+  renderBreak('qcd-batch','batch');
+  renderBreak('qcd-produk','produk');
+  renderBreak('qcd-jenis','jenis');
+}
+
+function exportQcExcel(){
+  try{
+    const wb=XLSX.utils.book_new();
+    const rows=[['Tgl QC','Batch','Produk','Jenis Kerusakan','Qty Rusak','Total QC','% Rusak']];
+    qcArr().forEach(q=>rows.push([q.tanggal||'',q.batch||'',q.produk||'',q.jenis||'',q.qtyRusak||0,q.totalQc||0,qcPersen(q.qtyRusak,q.totalQc).toFixed(2)+'%']));
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:12},{wch:10},{wch:18},{wch:20},{wch:10},{wch:10},{wch:10}];
+    XLSX.utils.book_append_sheet(wb,ws,'Laporan QC');
+    XLSX.writeFile(wb,'RRQ_LaporanQC_'+nowDate()+'.xlsx');
+    toast('Laporan QC diexport');
+  }catch(e){toast('Gagal export: '+e.message,'e')}
+}
+
+// ══ DATA BATCH (Master Batch + Kedatangan) ══
+let batchSearchQ='';
+function batchArr(){return Object.values(allBatch).sort((a,b)=>(b.ts||0)-(a.ts||0))}
+function onBatchSearch(){batchSearchQ=(document.getElementById('bt-q')||{}).value?.toLowerCase()||'';renderBatchList()}
+
+function renderBatchList(){
+  const el=document.getElementById('bt-list');const cnt=document.getElementById('bt-cnt');if(!el)return;
+  let arr=batchArr().filter(b=>!batchSearchQ||[b.kode,b.produk].join(' ').toLowerCase().includes(batchSearchQ));
+  if(cnt)cnt.textContent=arr.length+' batch';
+  const isAdmin=currentUser&&currentUser.role==='admin';
+  if(!arr.length){el.innerHTML=emp('Belum ada data batch. Tap "+ Kedatangan Batch".');return}
+  el.innerHTML=arr.map(b=>`<div style="padding:12px 14px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <div style="flex:1;min-width:180px">
+      <div style="font-size:13px;font-weight:700">${b.kode} <span style="font-weight:400;color:var(--mu)">— ${b.produk||'-'}</span></div>
+      <div style="font-size:11px;color:var(--mu);margin-top:2px">Datang: ${b.tanggal||'-'}${b.ket&&b.ket!=='-'?' &bull; '+b.ket:''}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+      <div style="text-align:right"><div style="font-size:18px;font-weight:900;color:#4f7c6e;line-height:1">${b.qty||0}</div><div style="font-size:9px;color:var(--mu)">pcs</div></div>
+      ${isAdmin?`<div style="display:flex;gap:5px">
+        <button class="bt-edit-btn" data-key="${b._key}" style="font-size:11px;font-weight:700;color:#2d5f99;background:var(--bl);border:1.5px solid #b5d0ed;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Edit</button>
+        <button class="bt-del-btn" data-key="${b._key}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Hapus</button>
+      </div>`:''}
+    </div>
+  </div>`).join('');
+  el.querySelectorAll('.bt-edit-btn').forEach(btn=>{btn.onclick=function(){openEditBatch(this.getAttribute('data-key'))}});
+  el.querySelectorAll('.bt-del-btn').forEach(btn=>{btn.onclick=function(){
+    const key=this.getAttribute('data-key');
+    showConfirm('Hapus data batch ini?','Data tidak dapat dikembalikan.',async()=>{
+      try{await db.ref('batch/'+key).remove();toast('Batch dihapus')}catch(e){toast('Gagal','e')}
+    });
+  }});
+}
+
+function openEditBatch(key){
+  const b=allBatch[key];if(!b)return;
+  document.getElementById('batch-modal-title').textContent='Edit Data Batch';
+  document.getElementById('bt-edit-key').value=key;
+  document.getElementById('bt-kode').value=b.kode||'';
+  document.getElementById('bt-produk').value=b.produk||'';
+  document.getElementById('bt-tgl').value=b.tglISO||'';
+  document.getElementById('bt-qty').value=b.qty||'';
+  document.getElementById('bt-ket').value=b.ket&&b.ket!=='-'?b.ket:'';
+  renderGrupJenisDatalists();
+  openM('m-batch');
+}
+
+async function doBatchInput(){
+  const key=document.getElementById('bt-edit-key').value;
+  const kode=(document.getElementById('bt-kode').value||'').trim();
+  const produk=(document.getElementById('bt-produk').value||'').trim();
+  const tglISO=document.getElementById('bt-tgl').value;
+  const qty=parseInt(document.getElementById('bt-qty').value,10)||0;
+  const ket=document.getElementById('bt-ket').value||'-';
+  if(!kode)return toast('Kode batch wajib diisi','e');
+  let tanggal='-';
+  if(tglISO){const[y,m,d]=tglISO.split('-');tanggal=d+'/'+m+'/'+y}
+  try{
+    const data={kode,produk,tglISO:tglISO||'',tanggal,qty,ket,by:currentUser.nama};
+    if(key){
+      await db.ref('batch/'+key).update(data);
+      toast('Data batch diperbarui');
+    } else {
+      data.ts=Date.now();
+      await db.ref('batch').push(data);
+      toast('Kedatangan batch dicatat');
+    }
+    closeM('m-batch');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+// ══ IMPORT DATA DARI SPREADSHEET ══
+function updateSeedCounts(){
+  const s=window.__SEED_DATA__;if(!s)return;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  set('seed-def',(s.defects||[]).length);
+  set('seed-batch',(s.batches||[]).length);
+  set('seed-qc',(s.qc||[]).length);
+}
+async function importSeedData(){
+  const s=window.__SEED_DATA__;
+  if(!s)return toast('Data import tidak ditemukan','e');
+  showConfirm('Import data spreadsheet?','Menambahkan '+(s.defects||[]).length+' jenis kerusakan, '+(s.batches||[]).length+' batch, dan '+(s.qc||[]).length+' catatan QC. Data lama tidak dihapus.',async()=>{
+    try{
+      let addDef=0,addBatch=0,addQc=0;
+      // Jenis kerusakan (skip yang sudah ada)
+      for(const nama of (s.defects||[])){
+        if(!allRusakJenisM.find(g=>g.nama.toLowerCase()===nama.toLowerCase())){
+          await db.ref('rusakMasterJenis').push({nama});addDef++;
+        }
+      }
+      // Batch
+      for(const b of (s.batches||[])){
+        await db.ref('batch').push({ts:Date.now()+addBatch,kode:b.kode,produk:b.produk||'',tanggal:b.tanggal||'-',tglISO:b.tglISO||'',qty:b.qty||0,ket:b.ket||'-',by:currentUser.nama});
+        addBatch++;
+      }
+      // QC
+      for(const q of (s.qc||[])){
+        await db.ref('qc').push({ts:Date.now()+addQc,tanggal:q.tanggal||'-',tglISO:q.tglISO||'',batch:q.batch||'',produk:q.produk||'',jenis:q.jenis||'',qtyRusak:q.qtyRusak||0,totalQc:q.totalQc||0,by:currentUser.nama});
+        addQc++;
+      }
+      toast('Import selesai: '+addDef+' kerusakan, '+addBatch+' batch, '+addQc+' QC');
+    }catch(e){toast('Gagal import: '+e.message,'e')}
+  });
 }
 
 function openM(id){
@@ -1741,6 +3263,52 @@ function openM(id){
     updOutInfo();
     setTimeout(()=>document.getElementById('o-sku-search').focus(),200);
   }
+  if(id==='m-rekondisi'){
+    document.getElementById('rk-item-key').value='';
+    document.getElementById('rk-grup').value='';
+    document.getElementById('rk-jenis').value='';
+    document.getElementById('rk-batch').value='';
+    document.getElementById('rk-qty').value='';
+    document.getElementById('rk-ket').value='';
+    renderGrupJenisDatalists();
+    updateRekonBatchList('','');
+    updRekonInfo();
+    setTimeout(()=>document.getElementById('rk-grup').focus(),200);
+  }
+  if(id==='m-rusak-in'){
+    ['ri-grup','ri-jenis','ri-batch','ri-qty','ri-ket'].forEach(x=>document.getElementById(x).value='');
+    renderGrupJenisDatalists();renderBatchDatalist();
+    setTimeout(()=>document.getElementById('ri-grup').focus(),200);
+  }
+  if(id==='m-rusak-out'){
+    ['ro-grup','ro-jenis','ro-batch','ro-qty','ro-ket','ro-item-key'].forEach(x=>document.getElementById(x).value='');
+    renderGrupJenisDatalists();updateRusakOutBatchList('','');
+    document.getElementById('ro-info').innerHTML='';
+    setTimeout(()=>document.getElementById('ro-grup').focus(),200);
+  }
+  if(id==='m-qc'){
+    // Kalau bukan mode edit (title masih default), reset form
+    if(!document.getElementById('qc-edit-key').value){
+      document.getElementById('qc-modal-title').textContent='Input Laporan QC';
+      ['qc-batch','qc-produk','qc-jenis','qc-rusak','qc-total'].forEach(x=>document.getElementById(x).value='');
+      // Default tanggal hari ini
+      const t=new Date();
+      document.getElementById('qc-tgl').value=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+      document.getElementById('qc-persen-info').textContent='';
+    }
+    renderGrupJenisDatalists();renderQcBatchList();
+    setTimeout(()=>document.getElementById('qc-batch').focus(),200);
+  }
+  if(id==='m-batch'){
+    if(!document.getElementById('bt-edit-key').value){
+      document.getElementById('batch-modal-title').textContent='Kedatangan Batch Baru';
+      ['bt-kode','bt-produk','bt-qty','bt-ket'].forEach(x=>document.getElementById(x).value='');
+      const t=new Date();
+      document.getElementById('bt-tgl').value=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+    }
+    renderGrupJenisDatalists();
+    setTimeout(()=>document.getElementById('bt-kode').focus(),200);
+  }
 }
 function closeM(id){document.getElementById(id).classList.remove('open')}
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
@@ -1755,13 +3323,89 @@ function go(pg,el){
     const onclick=n.getAttribute('onclick')||'';
     if(onclick.includes("'"+pg+"'"))n.classList.add('on');
   });
+  // Auto-expand grup Barang Rusak & highlight parent kalau masuk sub-halamannya
+  // Auto-expand grup Stok (Sparepart + Barang Rusak)
+  if(pg==='stok'||pg==='rusak'){
+    const sub=document.getElementById('sd-stok-sub');
+    const caret=document.getElementById('sd-stok-caret');
+    const parent=document.getElementById('sd-stok-group');
+    if(sub)sub.style.display='block';
+    if(caret)caret.classList.add('open');
+    if(parent)parent.classList.add('on');
+  }
+  // Auto-expand grup Mutasi (Sparepart + Barang Rusak)
+  if(pg==='transaksi'||pg==='trxrusak'){
+    const sub=document.getElementById('sd-mutasi-sub');
+    const caret=document.getElementById('sd-mutasi-caret');
+    const parent=document.getElementById('sd-mutasi-group');
+    if(sub)sub.style.display='block';
+    if(caret)caret.classList.add('open');
+    if(parent)parent.classList.add('on');
+  }
+  // Auto-expand grup Laporan QC
+  if(pg==='qclog'||pg==='qcdash'||pg==='qcbatch'){
+    const sub=document.getElementById('sd-qc-sub');
+    const caret=document.getElementById('sd-qc-caret');
+    const parent=document.getElementById('sd-qc-group');
+    if(sub)sub.style.display='block';
+    if(caret)caret.classList.add('open');
+    if(parent)parent.classList.add('on');
+  }
+  // Auto-expand grup Master Data
+  if(pg==='sku'||pg==='jeniskerusakan'){
+    const sub=document.getElementById('sd-master-sub');
+    const caret=document.getElementById('sd-master-caret');
+    const parent=document.getElementById('sd-master-group');
+    if(sub)sub.style.display='block';
+    if(caret)caret.classList.add('open');
+    if(parent)parent.classList.add('on');
+  }
   // Scroll ke atas — di desktop scroll element .main, di mobile scroll window
   const mainEl=document.querySelector('.main');
   if(mainEl)mainEl.scrollTop=0;
   window.scrollTo(0,0);
   if(pg==='stok'){setTimeout(()=>updateChipArrows('s-chips'),50);setTimeout(()=>updateChipArrows('s-chips'),300);setTimeout(()=>updateChipArrows('s-chips'),800)}
   if(pg==='transaksi'){setTimeout(()=>updateChipArrows('trx-tabs'),50);setTimeout(()=>updateChipArrows('trx-tabs'),300);setTimeout(()=>updateChipArrows('trx-tabs'),800)}
-  if(pg==='backup'){updateLastBackup();renderBackupList()}
+  if(pg==='backup'){updateLastBackup();renderBackupList();updateSeedCounts()}
+  if(pg==='rusak'){renderRusak();setTimeout(()=>updateChipArrows('rusak-chips'),100)}
+  if(pg==='rekondisi'){renderRekon();setTimeout(()=>updateChipArrows('rekon-tabs'),100)}
+  if(pg==='trxrusak'){renderTrxRusak();setTimeout(()=>updateChipArrows('trxrusak-tabs'),100)}
+  if(pg==='jeniskerusakan')renderJenisKerusakan();
+  if(pg==='qclog'){renderQcLog();setTimeout(()=>updateChipArrows('qc-chips'),100)}
+  if(pg==='qcdash')renderQcDash();
+  if(pg==='qcbatch')renderBatchList();
+}
+function toggleQcGroup(){
+  const sub=document.getElementById('sd-qc-sub');
+  const caret=document.getElementById('sd-qc-caret');
+  if(!sub)return;
+  const isOpen=sub.style.display==='block';
+  sub.style.display=isOpen?'none':'block';
+  if(caret)caret.classList.toggle('open',!isOpen);
+}
+function toggleStokGroup(){
+  const sub=document.getElementById('sd-stok-sub');
+  const caret=document.getElementById('sd-stok-caret');
+  if(!sub)return;
+  const isOpen=sub.style.display==='block';
+  sub.style.display=isOpen?'none':'block';
+  if(caret)caret.classList.toggle('open',!isOpen);
+}
+function toggleMutasiGroup(){
+  const sub=document.getElementById('sd-mutasi-sub');
+  const caret=document.getElementById('sd-mutasi-caret');
+  if(!sub)return;
+  const isOpen=sub.style.display==='block';
+  sub.style.display=isOpen?'none':'block';
+  if(caret)caret.classList.toggle('open',!isOpen);
+}
+function toggleMasterGroup(){
+  const sub=document.getElementById('sd-master-sub');
+  const caret=document.getElementById('sd-master-caret');
+  if(!sub)return;
+  const isOpen=sub.style.display==='block';
+  sub.style.display=isOpen?'none':'block';
+  if(caret)caret.classList.toggle('open',!isOpen);
 }
 function showMore(){openM('m-more')}
 function goMore(pg){closeM('m-more');setTimeout(()=>go(pg),150)}
