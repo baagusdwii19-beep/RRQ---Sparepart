@@ -321,7 +321,8 @@ body.is-admin button.admin-only{display:inline-flex!important}
       <span class="sd-caret" id="sd-master-caret">›</span>
     </div>
     <div id="sd-master-sub" style="display:none">
-      <div class="sd-item sd-sub-item" onclick="go('sku',this)"><span class="sd-icon">🏷</span><span class="sd-label">Kelola SKU</span></div>
+      <div class="sd-item sd-sub-item" onclick="go('sku',this)"><span class="sd-icon">🏷</span><span class="sd-label">Kelola SKU Sparepart</span></div>
+      <div class="sd-item sd-sub-item" onclick="go('skurusak',this)"><span class="sd-icon">🏷</span><span class="sd-label">Kelola SKU Barang Rusak</span></div>
       <div class="sd-item sd-sub-item" onclick="go('jeniskerusakan',this)"><span class="sd-icon">🔨</span><span class="sd-label">Jenis Kerusakan</span></div>
     </div>
     <div class="sd-sep"></div>
@@ -403,7 +404,7 @@ body.is-admin button.admin-only{display:inline-flex!important}
 
     <!-- SKU -->
     <div class="page" id="page-sku">
-      <div class="section-title">Kelola SKU</div>
+      <div class="section-title">Kelola SKU Sparepart</div>
       <div class="form-section">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
           <div class="ct" style="margin:0;padding:0;border:none">Tambah SKU Baru</div>
@@ -611,6 +612,26 @@ body.is-admin button.admin-only{display:inline-flex!important}
       </div>
     </div>
 
+    <!-- KELOLA SKU RUSAK (untuk Barang Rusak, Rekondisi, Laporan QC) -->
+    <div class="page" id="page-skurusak">
+      <div class="section-title">Kelola SKU Barang Rusak</div>
+      <div class="card">
+        <div class="ch"><span class="ct">Tambah SKU</span></div>
+        <div class="cb">
+          <div style="font-size:13px;color:#4a5568;margin-bottom:12px;line-height:1.6">Daftar SKU ini dipakai di <strong>Stok Barang Rusak</strong>, <strong>Rekondisi</strong>, dan <strong>Laporan QC</strong> (sebagai Produk). Isi sekali di sini, nanti tinggal pilih.</div>
+          <div style="display:flex;gap:8px">
+            <input class="fi" id="skur-baru" placeholder="Contoh: NV-HR-SAGITARIUS..." style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();tambahSkuRusak()}">
+            <button type="button" class="btn bp btn-sm" onclick="tambahSkuRusak()">Tambah</button>
+          </div>
+          <button class="btn bo btn-sm" onclick="importSkuFromKategori()" style="margin-top:10px;width:100%">📋 Salin dari Kategori Sparepart</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Daftar SKU Rusak</span><span class="b bi" id="skur-cnt">0</span></div>
+        <div id="skur-list"></div>
+      </div>
+    </div>
+
     <!-- LOG QC -->
     <div class="page" id="page-qclog">
       <div class="ch" style="padding:14px 14px 0;border:none;background:transparent">
@@ -626,7 +647,12 @@ body.is-admin button.admin-only{display:inline-flex!important}
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:0 14px;margin-bottom:12px">
         <span style="font-size:13px;color:var(--mu)" id="qc-cnt">0 catatan</span>
-        <button class="btn bo btn-sm" onclick="exportQcExcel()">Export</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn bo btn-sm" id="qc-openall-btn" onclick="toggleAllQcLogBatch(true)" style="display:none">Buka Semua</button>
+          <button class="btn bo btn-sm" id="qc-closeall-btn" onclick="toggleAllQcLogBatch(false)" style="display:none">Tutup Semua</button>
+          <button class="btn bo btn-sm" id="qc-view-btn" onclick="toggleQcView()">📑 Grup per Batch</button>
+          <button class="btn bo btn-sm" onclick="exportQcExcel()">Export</button>
+        </div>
       </div>
       <div class="card">
         <div class="ch"><span class="ct">Catatan QC</span><button class="collapse-btn" onclick="toggleC('qc-list',this)">Tutup</button></div>
@@ -637,23 +663,29 @@ body.is-admin button.admin-only{display:inline-flex!important}
     <!-- DASHBOARD QC -->
     <div class="page" id="page-qcdash">
       <div class="section-title">Dashboard QC</div>
+      <div class="search-wrap"><input class="si" id="qcd-q" placeholder="Cari batch / produk..." oninput="onQcDashSearch()"></div>
       <div class="sgrid" style="margin-bottom:4px">
+        <div class="sc"><div class="sc-label">Total Produksi</div><div class="sc-val" id="qcd-totalprod" style="color:#3a6358">0</div></div>
         <div class="sc"><div class="sc-label">Total QC</div><div class="sc-val" id="qcd-totalqc">0</div></div>
         <div class="sc"><div class="sc-label">Total Rusak</div><div class="sc-val" id="qcd-totalrusak" style="color:#d95f5f">0</div></div>
-        <div class="sc"><div class="sc-label">% Rusak</div><div class="sc-val" id="qcd-persen" style="color:#d4924a">0%</div></div>
-        <div class="sc"><div class="sc-label">Jml Catatan</div><div class="sc-val" id="qcd-count">0</div></div>
+        <div class="sc"><div class="sc-label">% Defect</div><div class="sc-val" id="qcd-persen" style="color:#d4924a">0%</div></div>
       </div>
       <div class="card">
-        <div class="ch"><span class="ct">Rusak per Batch</span></div>
-        <div id="qcd-batch"></div>
+        <div class="ch"><span class="ct">Rekap per Batch &amp; Produk</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn bo btn-sm" onclick="toggleAllQcdBatch(true)" style="padding:4px 10px;font-size:11px">Buka Semua</button>
+            <button class="btn bo btn-sm" onclick="toggleAllQcdBatch(false)" style="padding:4px 10px;font-size:11px">Tutup Semua</button>
+          </div>
+        </div>
+        <div id="qcd-tbody"></div>
       </div>
       <div class="card">
-        <div class="ch"><span class="ct">Rusak per Produk</span></div>
-        <div id="qcd-produk"></div>
-      </div>
-      <div class="card">
-        <div class="ch"><span class="ct">Rusak per Jenis Kerusakan</span></div>
+        <div class="ch"><span class="ct">Top Jenis Kerusakan</span></div>
         <div id="qcd-jenis"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Rekap per Produk</span></div>
+        <div id="qcd-produk"></div>
       </div>
     </div>
 
@@ -742,7 +774,8 @@ body.is-admin button.admin-only{display:inline-flex!important}
   <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px;margin-bottom:8px" onclick="goMore('qcdash')">📊  Dashboard QC</button>
   <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px" onclick="goMore('qcbatch')">📥  Data Batch</button>
   <div style="font-size:11px;font-weight:800;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 6px;padding-left:2px">Master Data</div>
-  <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px;margin-bottom:8px" onclick="goMore('sku')">🏷  Kelola SKU</button>
+  <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px;margin-bottom:8px" onclick="goMore('sku')">🏷  Kelola SKU Sparepart</button>
+  <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px;margin-bottom:8px" onclick="goMore('skurusak')">🏷  Kelola SKU Barang Rusak</button>
   <button class="btn bo btn-full" style="justify-content:flex-start;padding-left:22px" onclick="goMore('jeniskerusakan')">🔨  Jenis Kerusakan</button>
   <hr style="border:none;border-top:1px solid var(--bd);margin:12px 0">
   <button class="btn bo btn-full admin-only" style="justify-content:flex-start" onclick="goMore('karyawan')">👥  Kelola Akun</button>
@@ -977,7 +1010,7 @@ window.__SEED_DATA__ = {"defects": ["dinamo kasar", "tidak nyala", "mahkota defe
 </script>
 <script>
 let db=null;
-let allS={},allT={},allK={},allKat=[],allRusak={},allRekon={},allTrxRusak={},allQc={},allBatch={};
+let allS={},allT={},allK={},allKat=[],allRusak={},allRekon={},allTrxRusak={},allQc={},allBatch={},allSkuRusak=[];
 let allRusakGrupM=[],allRusakJenisM=[];
 let catFilter='',lowFilter=false;
 let currentUser=null;
@@ -1161,6 +1194,11 @@ function listen(){
   db.ref('batch').orderByChild('ts').on('value',snap=>{
     allBatch={};if(snap.val())snap.forEach(c=>{allBatch[c.key]={...c.val(),_key:c.key}});
     renderBatchList();renderQcBatchList();
+  });
+  db.ref('skuRusak').on('value',snap=>{
+    allSkuRusak=[];
+    if(snap.val())snap.forEach(c=>{if(c.val()&&c.val().nama)allSkuRusak.push({key:c.key,nama:c.val().nama})});
+    renderGrupJenisDatalists();renderSkuRusakList();
   });
   db.ref('rusakMasterGrup').on('value',snap=>{
     allRusakGrupM=[];
@@ -1612,15 +1650,18 @@ function attachTrxButtons(){
 async function unapproveItem(key){
   try{
     const t=allT[key];if(!t)return;
+    if(!t.approved)return; // guard: belum approved, tidak perlu batal
     showConfirm('Batalkan approval?','Stok akan dikembalikan, transaksi jadi pending lagi.',async()=>{
-      // Kembalikan stok
-      const sp=sArr().find(s=>(s.sku||'').toLowerCase()===(t.sku||'').toLowerCase()||(s.nama||'').toLowerCase()===(t.sparepart||'').toLowerCase());
-      if(sp){
-        const cur=sp.stok||0;
-        const newStok=t.tipe==='masuk'?(cur-t.qty):(cur+t.qty);
-        await db.ref('sparepart/'+sp._key+'/stok').set(Math.max(0,newStok));
-      }
-      await db.ref('transaksi/'+key).update({approved:false,approvedAt:''});
+      // Set approved=false secara atomik dulu (mencegah dobel)
+      const res=await db.ref('transaksi/'+key+'/approved').transaction(cur=>{
+        if(cur!==true)return; // sudah bukan approved → abort
+        return false;
+      });
+      if(!res.committed||res.snapshot.val()!==false){toast('Status sudah berubah');return}
+      await db.ref('transaksi/'+key+'/approvedAt').set('');
+      // Kembalikan stok (kebalikan dari approve)
+      const sp=findSp(t);
+      if(sp)await adjustStokAtomic(sp._key,t.tipe==='masuk'?-t.qty:t.qty);
       toast('Approval dibatalkan');
     });
   }catch(e){toast('Gagal','e')}
@@ -1636,13 +1677,11 @@ async function editTrx(key){
   if(ket===null)return;
   try{
     if(t.approved){
-      // Sesuaikan stok dengan selisih
+      // Sesuaikan stok dengan selisih (atomik)
       const diff=qty-t.qty;
-      const sp=sArr().find(s=>(s.sku||'').toLowerCase()===(t.sku||'').toLowerCase()||(s.nama||'').toLowerCase()===(t.sparepart||'').toLowerCase());
+      const sp=findSp(t);
       if(sp&&diff!==0){
-        const cur=sp.stok||0;
-        const newStok=t.tipe==='masuk'?(cur+diff):(cur-diff);
-        await db.ref('sparepart/'+sp._key+'/stok').set(Math.max(0,newStok));
+        await adjustStokAtomic(sp._key,t.tipe==='masuk'?diff:-diff);
       }
     }
     await db.ref('transaksi/'+key).update({qty,ket:ket||'-'});
@@ -1654,17 +1693,19 @@ async function delTrx(key){
   const t=allT[key];if(!t)return;
   showConfirm('Hapus transaksi?','Akan dipindahkan ke tab Dihapus. Stok akan dikembalikan kalau sudah approved.',async()=>{
     try{
-      // Kalau approved, kembalikan stok dulu
-      if(t.approved){
-        const sp=sArr().find(s=>(s.sku||'').toLowerCase()===(t.sku||'').toLowerCase()||(s.nama||'').toLowerCase()===(t.sparepart||'').toLowerCase());
-        if(sp){
-          const cur=sp.stok||0;
-          const newStok=t.tipe==='masuk'?(cur-t.qty):(cur+t.qty);
-          await db.ref('sparepart/'+sp._key+'/stok').set(Math.max(0,newStok));
-        }
+      // Set deleted=true secara atomik dulu — supaya stok tidak dikembalikan dua kali
+      const wasApproved=t.approved;
+      const res=await db.ref('transaksi/'+key+'/deleted').transaction(cur=>{
+        if(cur===true)return; // sudah dihapus → abort
+        return true;
+      });
+      if(!res.committed||res.snapshot.val()!==true){toast('Transaksi sudah dihapus');return}
+      // Kalau tadinya approved, kembalikan stok (atomik)
+      if(wasApproved){
+        const sp=findSp(t);
+        if(sp)await adjustStokAtomic(sp._key,t.tipe==='masuk'?-t.qty:t.qty);
       }
       await db.ref('transaksi/'+key).update({
-        deleted:true,
         deletedAt:nowDate()+' '+nowTime(),
         deletedBy:currentUser.nama,
         approved:false
@@ -1876,14 +1917,31 @@ async function doKar(){
   }catch(e){toast('Gagal: '+e.message,'e')}
 }
 
+// Helper: ubah stok sparepart secara ATOMIK (mencegah race condition / stok bergeser)
+async function adjustStokAtomic(spKey,delta){
+  await db.ref('sparepart/'+spKey+'/stok').transaction(cur=>{
+    const v=(cur||0)+delta;
+    return v<0?0:v;
+  });
+}
+function findSp(t){
+  return sArr().find(s=>(s.sku||'').toLowerCase()===(t.sku||'').toLowerCase()||(s.nama||'').toLowerCase()===(t.sparepart||'').toLowerCase());
+}
+
 async function approveItem(key){
   try{
     const t=allT[key];if(!t)return;
-    await db.ref('transaksi/'+key).update({approved:true,approvedAt:nowDate()+' '+nowTime()});
-    const sp=sArr().find(s=>(s.sku||'').toLowerCase()===(t.sku||'').toLowerCase()||(s.nama||'').toLowerCase()===(t.sparepart||'').toLowerCase());
+    if(t.approved)return; // guard: sudah approved, jangan proses lagi (anti-dobel)
+    // Tandai approved DULU secara atomik — kalau sudah true, batal (mencegah dobel klik)
+    const res=await db.ref('transaksi/'+key+'/approved').transaction(cur=>{
+      if(cur===true)return; // sudah di-approve orang lain → abort
+      return true;
+    });
+    if(!res.committed||res.snapshot.val()!==true){toast('Transaksi sudah di-approve');return}
+    await db.ref('transaksi/'+key+'/approvedAt').set(nowDate()+' '+nowTime());
+    const sp=findSp(t);
     if(sp){
-      const newStok=t.tipe==='masuk'?(sp.stok+t.qty):(sp.stok-t.qty);
-      await db.ref('sparepart/'+sp._key+'/stok').set(Math.max(0,newStok));
+      await adjustStokAtomic(sp._key,t.tipe==='masuk'?t.qty:-t.qty);
     }
     toast('Approved');
   }catch(e){toast('Gagal','e')}
@@ -1893,18 +1951,21 @@ async function approveAll(){
   const pending=tArr().filter(t=>!t.approved);
   if(!pending.length)return toast('Tidak ada yang perlu di-approve');
   const at=nowDate()+' '+nowTime();
+  let ok=0;
   try{
     for(const t of pending){
-      await db.ref('transaksi/'+t._key).update({approved:true,approvedAt:at});
-      const sp=sArr().find(s=>(s.sku||'').toLowerCase()===(t.sku||'').toLowerCase()||(s.nama||'').toLowerCase()===(t.sparepart||'').toLowerCase());
-      if(sp){
-        const cur=sp.stok||0;
-        const newStok=t.tipe==='masuk'?(cur+t.qty):(cur-t.qty);
-        await db.ref('sparepart/'+sp._key+'/stok').set(Math.max(0,newStok));
-        sp.stok=newStok;
-      }
+      // Approve atomik per item (skip kalau sudah approved oleh proses lain)
+      const res=await db.ref('transaksi/'+t._key+'/approved').transaction(cur=>{
+        if(cur===true)return;
+        return true;
+      });
+      if(!res.committed||res.snapshot.val()!==true)continue;
+      await db.ref('transaksi/'+t._key+'/approvedAt').set(at);
+      const sp=findSp(t);
+      if(sp)await adjustStokAtomic(sp._key,t.tipe==='masuk'?t.qty:-t.qty);
+      ok++;
     }
-    toast(pending.length+' transaksi di-approve');
+    toast(ok+' transaksi di-approve');
   }catch(e){toast('Gagal: '+e.message,'e')}
 }
 
@@ -1970,7 +2031,8 @@ async function autoBackup(){
       transaksiRusak:allTrxRusak,
       rusakMasterJenis:allRusakJenisM,
       qc:allQc,
-      batch:allBatch
+      batch:allBatch,
+      skuRusak:allSkuRusak
     };
     // Simpan ke /backups dengan key timestamp
     await db.ref('backups/'+now).set(snapshot);
@@ -2007,7 +2069,8 @@ async function doBackupNow(){
       transaksiRusak:allTrxRusak,
       rusakMasterJenis:allRusakJenisM,
       qc:allQc,
-      batch:allBatch
+      batch:allBatch,
+      skuRusak:allSkuRusak
     };
     await db.ref('backups/'+now).set(snapshot);
     lastAutoBackupTs=now;
@@ -2102,6 +2165,10 @@ async function restoreFromBackup(key){
       const d={};Object.entries(data.batch).forEach(([k,v])=>{const{_key,...rest}=v;d[k]=rest});
       await db.ref('batch').set(d);
     }
+    if(data.skuRusak&&Array.isArray(data.skuRusak)){
+      const d={};data.skuRusak.forEach(s=>{if(s.key)d[s.key]={nama:s.nama}});
+      await db.ref('skuRusak').set(d);
+    }
     toast('Data berhasil dipulihkan');
   }catch(e){toast('Gagal restore: '+e.message,'e')}
 }
@@ -2120,7 +2187,8 @@ function downloadBackupJSON(){
       transaksiRusak:allTrxRusak,
       rusakMasterJenis:allRusakJenisM,
       qc:allQc,
-      batch:allBatch
+      batch:allBatch,
+      skuRusak:allSkuRusak
     };
     const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     const a=document.createElement('a');
@@ -2181,6 +2249,10 @@ function onRestoreFile(input){
           if(data.batch){
             const d={};Object.entries(data.batch).forEach(([k,v])=>{const{_key,...rest}=v;d[k]=rest});
             await db.ref('batch').set(d);
+          }
+          if(data.skuRusak&&Array.isArray(data.skuRusak)){
+            const d={};data.skuRusak.forEach(s=>{if(s.key)d[s.key]={nama:s.nama}});
+            await db.ref('skuRusak').set(d);
           }
           toast('Restore berhasil');
         }catch(err){toast('Gagal restore: '+err.message,'e')}
@@ -2263,11 +2335,14 @@ function renderBatchDatalist(){
 }
 
 function renderGrupJenisDatalists(){
-  // SKU Grup untuk barang rusak diambil dari KATEGORI (di Kelola SKU)
+  // SKU Grup untuk barang rusak/QC diambil dari MASTER SKU RUSAK (di Kelola SKU Rusak)
+  // Kalau belum ada, fallback ke Kategori supaya data lama tetap muncul
   const gl=document.getElementById('rusak-grup-list');
   if(gl){
-    const cats=[...allKat].map(k=>k.nama).filter(Boolean).sort();
-    gl.innerHTML=cats.map(n=>`<option value="${esc2(n)}">`).join('');
+    let names=allSkuRusak.map(s=>s.nama).filter(Boolean);
+    if(!names.length)names=[...allKat].map(k=>k.nama).filter(Boolean);
+    names=[...new Set(names)].sort();
+    gl.innerHTML=names.map(n=>`<option value="${esc2(n)}">`).join('');
   }
   // Jenis kerusakan dari master jenis
   const jl=document.getElementById('rusak-jenis-list');
@@ -2357,6 +2432,63 @@ async function tambahJenisKerusakan(){
     toast('Jenis kerusakan "'+nama+'" ditambahkan');
     // listener Firebase akan otomatis refresh list — tidak push manual (mencegah dobel)
   }catch(e){toast('Gagal: '+e.message,'e')}
+}
+
+// ══ KELOLA SKU RUSAK (Barang Rusak / Rekondisi / QC) ══
+function renderSkuRusakList(){
+  const el=document.getElementById('skur-list');const cnt=document.getElementById('skur-cnt');if(!el)return;
+  const arr=[...allSkuRusak].sort((a,b)=>(a.nama||'').localeCompare(b.nama||''));
+  if(cnt)cnt.textContent=arr.length;
+  const isAdmin=currentUser&&currentUser.role==='admin';
+  el.innerHTML=arr.length?arr.map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px;border-bottom:1px solid #f4f6f9">
+    <span style="font-size:13px;font-weight:600;flex:1;min-width:0">${s.nama}</span>
+    ${isAdmin?`<div style="display:flex;gap:5px;flex-shrink:0">
+      <button class="edit-skur-btn" data-key="${s.key}" data-nama="${esc2(s.nama)}" style="font-size:11px;font-weight:700;color:#2d5f99;background:var(--bl);border:1.5px solid #b5d0ed;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit">Edit</button>
+      <button class="del-skur-btn" data-key="${s.key}" style="font-size:11px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit">Hapus</button>
+    </div>`:''}
+  </div>`).join(''):emp('Belum ada SKU. Tambahkan di atas atau salin dari Kategori.');
+  el.querySelectorAll('.edit-skur-btn').forEach(btn=>{
+    btn.onclick=function(){editSkuRusak(this.getAttribute('data-key'),this.getAttribute('data-nama'))};
+  });
+  el.querySelectorAll('.del-skur-btn').forEach(btn=>{
+    attachInlineDeleteConfirm(btn,async()=>{
+      const key=btn.getAttribute('data-key');
+      try{await db.ref('skuRusak/'+key).remove();toast('SKU dihapus')}catch(e){toast('Gagal','e')}
+    });
+  });
+}
+async function tambahSkuRusak(){
+  const input=document.getElementById('skur-baru');
+  const nama=(input.value||'').trim();
+  if(!nama)return toast('Nama SKU kosong','e');
+  if(allSkuRusak.find(s=>s.nama.toLowerCase()===nama.toLowerCase()))return toast('SKU sudah ada','e');
+  try{
+    await db.ref('skuRusak').push({nama});
+    input.value='';input.focus();
+    toast('SKU "'+nama+'" ditambahkan');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+async function editSkuRusak(key,namaLama){
+  const baru=(prompt('Ubah SKU:',namaLama)||'').trim();
+  if(!baru||baru===namaLama)return;
+  if(allSkuRusak.find(s=>s.nama.toLowerCase()===baru.toLowerCase()&&s.key!==key))return toast('SKU "'+baru+'" sudah ada','e');
+  try{
+    await db.ref('skuRusak/'+key).update({nama:baru});
+    toast('SKU diperbarui');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+async function importSkuFromKategori(){
+  const catNames=[...allKat].map(k=>k.nama).filter(Boolean);
+  if(!catNames.length)return toast('Tidak ada kategori untuk disalin','e');
+  const existing=new Set(allSkuRusak.map(s=>s.nama.toLowerCase()));
+  const toAdd=catNames.filter(n=>!existing.has(n.toLowerCase()));
+  if(!toAdd.length)return toast('Semua kategori sudah ada di SKU Rusak');
+  showConfirm('Salin '+toAdd.length+' SKU dari Kategori?','Menambahkan kategori sparepart yang belum ada ke daftar SKU Rusak.',async()=>{
+    try{
+      for(const nama of toAdd){await db.ref('skuRusak').push({nama})}
+      toast(toAdd.length+' SKU disalin dari Kategori');
+    }catch(e){toast('Gagal: '+e.message,'e')}
+  });
 }
 
 function openAddRusakItem(){
@@ -2606,11 +2738,16 @@ async function doRekondisi(){
 async function approveRekon(key){
   try{
     const t=allRekon[key];if(!t)return;
+    if(t.approved)return; // guard anti-dobel
     const r=allRusak[t.itemKey];
     if(!r)return toast('Item barang rusak tidak ditemukan','e');
     if((r.qty||0)<t.qty)return toast('Stok tidak cukup untuk approve','e');
-    await db.ref('rekondisi/'+key).update({approved:true,approvedAt:nowDate()+' '+nowTime()});
-    await db.ref('rusak/'+t.itemKey+'/qty').set(Math.max(0,(r.qty||0)-t.qty));
+    const res=await db.ref('rekondisi/'+key+'/approved').transaction(cur=>{
+      if(cur===true)return;return true;
+    });
+    if(!res.committed||res.snapshot.val()!==true){toast('Sudah di-approve');return}
+    await db.ref('rekondisi/'+key+'/approvedAt').set(nowDate()+' '+nowTime());
+    await adjustRusakQtyAtomic(t.itemKey,-t.qty);
     toast('Rekondisi di-approve, stok terpotong');
   }catch(e){toast('Gagal','e')}
 }
@@ -2624,10 +2761,12 @@ async function approveAllRekon(){
     for(const t of pending){
       const r=allRusak[t.itemKey];
       if(!r||(r.qty||0)<t.qty){skip++;continue}
-      await db.ref('rekondisi/'+t._key).update({approved:true,approvedAt:at});
-      const newQty=Math.max(0,(r.qty||0)-t.qty);
-      await db.ref('rusak/'+t.itemKey+'/qty').set(newQty);
-      r.qty=newQty;
+      const res=await db.ref('rekondisi/'+t._key+'/approved').transaction(cur=>{
+        if(cur===true)return;return true;
+      });
+      if(!res.committed||res.snapshot.val()!==true){skip++;continue}
+      await db.ref('rekondisi/'+t._key+'/approvedAt').set(at);
+      await adjustRusakQtyAtomic(t.itemKey,-t.qty);
       ok++;
     }
     toast(skip?('Approve '+ok+', '+skip+' dilewati karena stok tidak cukup'):('Semua di-approve ('+ok+')'));
@@ -2636,11 +2775,15 @@ async function approveAllRekon(){
 
 async function unapproveRekon(key){
   const t=allRekon[key];if(!t)return;
+  if(!t.approved)return;
   showConfirm('Batalkan approval?','Stok barang rusak akan dikembalikan.',async()=>{
     try{
-      const r=allRusak[t.itemKey];
-      if(r)await db.ref('rusak/'+t.itemKey+'/qty').set((r.qty||0)+t.qty);
-      await db.ref('rekondisi/'+key).update({approved:false,approvedAt:''});
+      const res=await db.ref('rekondisi/'+key+'/approved').transaction(cur=>{
+        if(cur!==true)return;return false;
+      });
+      if(!res.committed||res.snapshot.val()!==false){toast('Status sudah berubah');return}
+      await db.ref('rekondisi/'+key+'/approvedAt').set('');
+      await adjustRusakQtyAtomic(t.itemKey,t.qty);
       toast('Approval dibatalkan');
     }catch(e){toast('Gagal','e')}
   });
@@ -2650,11 +2793,13 @@ async function delRekon(key){
   const t=allRekon[key];if(!t)return;
   showConfirm('Hapus rekondisi?','Akan dipindah ke tab Dihapus. Stok dikembalikan kalau sudah approved.',async()=>{
     try{
-      if(t.approved){
-        const r=allRusak[t.itemKey];
-        if(r)await db.ref('rusak/'+t.itemKey+'/qty').set((r.qty||0)+t.qty);
-      }
-      await db.ref('rekondisi/'+key).update({deleted:true,deletedAt:nowDate()+' '+nowTime(),deletedBy:currentUser.nama,approved:false});
+      const wasApproved=t.approved;
+      const res=await db.ref('rekondisi/'+key+'/deleted').transaction(cur=>{
+        if(cur===true)return;return true;
+      });
+      if(!res.committed||res.snapshot.val()!==true){toast('Sudah dihapus');return}
+      if(wasApproved)await adjustRusakQtyAtomic(t.itemKey,t.qty);
+      await db.ref('rekondisi/'+key).update({deletedAt:nowDate()+' '+nowTime(),deletedBy:currentUser.nama,approved:false});
       toast('Rekondisi dipindah ke Dihapus');
     }catch(e){toast('Gagal: '+e.message,'e')}
   });
@@ -2860,23 +3005,34 @@ async function doRusakOut(){
   }catch(e){toast('Gagal: '+e.message,'e')}
 }
 
+async function adjustRusakQtyAtomic(itemKey,delta){
+  await db.ref('rusak/'+itemKey+'/qty').transaction(cur=>{
+    const v=(cur||0)+delta;
+    return v<0?0:v;
+  });
+}
 async function approveTrxRusak(key){
   const t=allTrxRusak[key];if(!t)return;
+  if(t.approved)return; // guard anti-dobel
   try{
+    // Tandai approved dulu secara atomik
+    const res=await db.ref('transaksiRusak/'+key+'/approved').transaction(cur=>{
+      if(cur===true)return;return true;
+    });
+    if(!res.committed||res.snapshot.val()!==true){toast('Sudah di-approve');return}
     if(t.tipe==='masuk'){
       let item=findRusakItem(t.grup,t.jenis,t.batch);
       if(item){
-        await db.ref('rusak/'+item._key+'/qty').set((item.qty||0)+t.qty);
+        await adjustRusakQtyAtomic(item._key,t.qty);
       } else {
         await db.ref('rusak').push({grup:t.grup,jenis:t.jenis,batch:t.batch,qty:t.qty});
       }
     } else {
       const item=t.itemKey?allRusak[t.itemKey]:findRusakItem(t.grup,t.jenis,t.batch);
-      if(!item)return toast('Item stok tidak ditemukan','e');
-      if((item.qty||0)<t.qty)return toast('Stok tidak cukup untuk approve','e');
-      await db.ref('rusak/'+item._key+'/qty').set(Math.max(0,(item.qty||0)-t.qty));
+      if(!item){toast('Item stok tidak ditemukan','e');return}
+      await adjustRusakQtyAtomic(item._key,-t.qty);
     }
-    await db.ref('transaksiRusak/'+key).update({approved:true,approvedAt:nowDate()+' '+nowTime()});
+    await db.ref('transaksiRusak/'+key+'/approvedAt').set(nowDate()+' '+nowTime());
     toast('Transaksi di-approve, stok diperbarui');
   }catch(e){toast('Gagal: '+e.message,'e')}
 }
@@ -2887,32 +3043,37 @@ async function approveAllTrxRusak(){
   let ok=0,skip=0;
   try{
     for(const t of pending){
+      const res=await db.ref('transaksiRusak/'+t._key+'/approved').transaction(cur=>{
+        if(cur===true)return;return true;
+      });
+      if(!res.committed||res.snapshot.val()!==true){skip++;continue}
       if(t.tipe==='masuk'){
         let item=findRusakItem(t.grup,t.jenis,t.batch);
-        if(item){const nq=(item.qty||0)+t.qty;await db.ref('rusak/'+item._key+'/qty').set(nq);item.qty=nq;}
+        if(item){await adjustRusakQtyAtomic(item._key,t.qty);}
         else{const ref=await db.ref('rusak').push({grup:t.grup,jenis:t.jenis,batch:t.batch,qty:t.qty});allRusak[ref.key]={grup:t.grup,jenis:t.jenis,batch:t.batch,qty:t.qty,_key:ref.key};}
-        await db.ref('transaksiRusak/'+t._key).update({approved:true,approvedAt:at});ok++;
+        await db.ref('transaksiRusak/'+t._key+'/approvedAt').set(at);ok++;
       } else {
         const item=t.itemKey?allRusak[t.itemKey]:findRusakItem(t.grup,t.jenis,t.batch);
-        if(!item||(item.qty||0)<t.qty){skip++;continue}
-        const nq=Math.max(0,(item.qty||0)-t.qty);
-        await db.ref('rusak/'+item._key+'/qty').set(nq);item.qty=nq;
-        await db.ref('transaksiRusak/'+t._key).update({approved:true,approvedAt:at});ok++;
+        if(!item){skip++;continue}
+        await adjustRusakQtyAtomic(item._key,-t.qty);
+        await db.ref('transaksiRusak/'+t._key+'/approvedAt').set(at);ok++;
       }
     }
-    toast(skip?('Approve '+ok+', '+skip+' dilewati (stok kurang)'):('Semua di-approve ('+ok+')'));
+    toast(skip?('Approve '+ok+', '+skip+' dilewati'):('Semua di-approve ('+ok+')'));
   }catch(e){toast('Gagal: '+e.message,'e')}
 }
 async function unapproveTrxRusak(key){
   const t=allTrxRusak[key];if(!t)return;
+  if(!t.approved)return;
   showConfirm('Batalkan approval?','Stok akan dikembalikan ke kondisi sebelumnya.',async()=>{
     try{
+      const res=await db.ref('transaksiRusak/'+key+'/approved').transaction(cur=>{
+        if(cur!==true)return;return false;
+      });
+      if(!res.committed||res.snapshot.val()!==false){toast('Status sudah berubah');return}
       const item=t.itemKey?allRusak[t.itemKey]:findRusakItem(t.grup,t.jenis,t.batch);
-      if(item){
-        const nq=t.tipe==='masuk'?Math.max(0,(item.qty||0)-t.qty):(item.qty||0)+t.qty;
-        await db.ref('rusak/'+item._key+'/qty').set(nq);
-      }
-      await db.ref('transaksiRusak/'+key).update({approved:false,approvedAt:''});
+      if(item)await adjustRusakQtyAtomic(item._key,t.tipe==='masuk'?-t.qty:t.qty);
+      await db.ref('transaksiRusak/'+key+'/approvedAt').set('');
       toast('Approval dibatalkan');
     }catch(e){toast('Gagal','e')}
   });
@@ -2921,14 +3082,16 @@ async function delTrxRusak(key){
   const t=allTrxRusak[key];if(!t)return;
   showConfirm('Hapus transaksi?','Dipindah ke tab Dihapus. Stok dikembalikan kalau sudah approved.',async()=>{
     try{
-      if(t.approved){
+      const wasApproved=t.approved;
+      const res=await db.ref('transaksiRusak/'+key+'/deleted').transaction(cur=>{
+        if(cur===true)return;return true;
+      });
+      if(!res.committed||res.snapshot.val()!==true){toast('Sudah dihapus');return}
+      if(wasApproved){
         const item=t.itemKey?allRusak[t.itemKey]:findRusakItem(t.grup,t.jenis,t.batch);
-        if(item){
-          const nq=t.tipe==='masuk'?Math.max(0,(item.qty||0)-t.qty):(item.qty||0)+t.qty;
-          await db.ref('rusak/'+item._key+'/qty').set(nq);
-        }
+        if(item)await adjustRusakQtyAtomic(item._key,t.tipe==='masuk'?-t.qty:t.qty);
       }
-      await db.ref('transaksiRusak/'+key).update({deleted:true,deletedAt:nowDate()+' '+nowTime(),deletedBy:currentUser.nama,approved:false});
+      await db.ref('transaksiRusak/'+key).update({deletedAt:nowDate()+' '+nowTime(),deletedBy:currentUser.nama,approved:false});
       toast('Transaksi dipindah ke Dihapus');
     }catch(e){toast('Gagal','e')}
   });
@@ -2981,6 +3144,19 @@ function renderQcChips(){
   requestAnimationFrame(()=>updateChipArrows('qc-chips'));
 }
 
+let qcViewMode='list'; // 'list' atau 'group'
+function toggleQcView(){
+  qcViewMode=qcViewMode==='list'?'group':'list';
+  const btn=document.getElementById('qc-view-btn');
+  if(btn)btn.textContent=qcViewMode==='group'?'📄 Tampilan List':'📑 Grup per Batch';
+  const openb=document.getElementById('qc-openall-btn');
+  const closeb=document.getElementById('qc-closeall-btn');
+  if(openb)openb.style.display=qcViewMode==='group'?'inline-flex':'none';
+  if(closeb)closeb.style.display=qcViewMode==='group'?'inline-flex':'none';
+  pagerStateQc.qc=1;
+  renderQcLog();
+}
+
 function renderQcLog(){
   renderQcChips();renderQcBatchList();
   const el=document.getElementById('qc-list');const cnt=document.getElementById('qc-cnt');if(!el)return;
@@ -2989,9 +3165,11 @@ function renderQcLog(){
     return mq&&(!qcBatchFilter||q.batch===qcBatchFilter);
   });
   if(cnt)cnt.textContent=arr.length+' catatan';
-  const pg=paginateQc(arr);
   const isAdmin=currentUser&&currentUser.role==='admin';
-  if(!pg.count){el.innerHTML=emp('Belum ada catatan QC');return}
+  if(!arr.length){el.innerHTML=emp('Belum ada catatan QC');return}
+  if(qcViewMode==='group'){renderQcGrouped(el,arr,isAdmin);return}
+  // ── MODE LIST (biasa, dengan pagination) ──
+  const pg=paginateQc(arr);
   el.innerHTML=pg.items.map(q=>{
     const p=qcPersen(q.qtyRusak,q.totalQc);
     const col=p>=5?'#d95f5f':(p>=2?'#d4924a':'#4f7c6e');
@@ -3012,6 +3190,85 @@ function renderQcLog(){
       </div>
     </div>`;
   }).join('')+pagerHTMLQc(pg.page,pg.total,pg.count);
+  attachQcRowButtons();
+}
+
+function renderQcGrouped(el,arr,isAdmin){
+  // Kelompokkan: Batch → Produk → daftar kerusakan
+  const byBatch={};
+  arr.forEach(q=>{
+    const b=q.batch||'-';
+    if(!byBatch[b])byBatch[b]={};
+    const p=q.produk||'-';
+    if(!byBatch[b][p])byBatch[b][p]=[];
+    byBatch[b][p].push(q);
+  });
+  const batchKeys=Object.keys(byBatch).sort();
+  const bodyOpen=!!qcSearchQ||!!qcBatchFilter; // kalau lagi search/filter batch, buka otomatis
+  let html='';
+  batchKeys.forEach((b,bi)=>{
+    // Total per batch
+    let bRusak=0,bTotal=0;
+    Object.values(byBatch[b]).forEach(list=>list.forEach(q=>{bRusak+=parseInt(q.qtyRusak,10)||0;bTotal+=parseInt(q.totalQc,10)||0}));
+    const bp=bTotal>0?(bRusak/bTotal*100):0;
+    const bodyId='qclogbatch-'+bi;
+    // Header batch (klik buka/tutup)
+    html+=`<div onclick="toggleQcLogBatch('${bodyId}',this)" style="cursor:pointer;background:#eef3f8;padding:12px 14px;border-bottom:1px solid #dde6f0;display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <span style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:900;color:#2d3e50">
+        <span class="qclog-caret" style="display:inline-block;transition:transform .18s;color:var(--mu);font-size:12px;transform:${bodyOpen?'rotate(90deg)':'rotate(0deg)'}">▶</span>
+        📦 Batch ${b}
+      </span>
+      <span style="font-size:12px;font-weight:800;color:#d95f5f;flex-shrink:0">${bRusak} rusak / ${bTotal} QC (${bp.toFixed(2)}%)</span>
+    </div>`;
+    // Body
+    html+=`<div id="${bodyId}" style="display:${bodyOpen?'block':'none'}">`;
+    const produkKeys=Object.keys(byBatch[b]).sort();
+    produkKeys.forEach(p=>{
+      const list=byBatch[b][p];
+      let pRusak=0,pTotal=0;
+      list.forEach(q=>{pRusak+=parseInt(q.qtyRusak,10)||0;pTotal+=parseInt(q.totalQc,10)||0});
+      const pp=pTotal>0?(pRusak/pTotal*100):0;
+      html+=`<div style="padding:8px 14px 8px 20px;background:#f7fafc;border-bottom:1px solid #eef2f7;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;font-weight:800;color:#3a5068">${p}</span>
+        <span style="font-size:11px;font-weight:700;color:var(--mu)">${pRusak}/${pTotal} &bull; ${pp.toFixed(2)}%</span>
+      </div>`;
+      list.forEach(q=>{
+        const pc=qcPersen(q.qtyRusak,q.totalQc);
+        const col=pc>=5?'#d95f5f':(pc>=2?'#d4924a':'#4f7c6e');
+        html+=`<div style="padding:9px 14px 9px 30px;border-bottom:1px solid #f4f6f9;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:140px">
+            <div style="font-size:12px;font-weight:600">${q.jenis}</div>
+            <div style="font-size:10px;color:var(--mu)">${q.tanggal||'-'}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <span style="font-size:12px"><strong style="color:#d95f5f">${q.qtyRusak}</strong><span style="color:var(--mu)">/${q.totalQc}</span></span>
+            <span style="font-size:12px;font-weight:800;color:${col};margin-left:6px">${pc.toFixed(2)}%</span>
+          </div>
+          ${isAdmin?`<div style="display:flex;gap:4px;flex-shrink:0">
+            <button class="qc-edit-btn" data-key="${q._key}" style="font-size:10px;font-weight:700;color:#2d5f99;background:var(--bl);border:1.5px solid #b5d0ed;border-radius:5px;padding:4px 9px;cursor:pointer;font-family:inherit">Edit</button>
+            <button class="qc-del-btn" data-key="${q._key}" style="font-size:10px;font-weight:700;color:var(--red);background:var(--rl);border:1.5px solid #f0a0a0;border-radius:5px;padding:4px 9px;cursor:pointer;font-family:inherit">Hapus</button>
+          </div>`:''}
+        </div>`;
+      });
+    });
+    html+=`</div>`;
+  });
+  el.innerHTML=html;
+  attachQcRowButtons();
+}
+function toggleQcLogBatch(id,head){
+  const body=document.getElementById(id);if(!body)return;
+  const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  const caret=head.querySelector('.qclog-caret');
+  if(caret)caret.style.transform=open?'rotate(0deg)':'rotate(90deg)';
+}
+function toggleAllQcLogBatch(openAll){
+  document.querySelectorAll('#qc-list [id^="qclogbatch-"]').forEach(b=>{b.style.display=openAll?'block':'none'});
+  document.querySelectorAll('#qc-list .qclog-caret').forEach(c=>{c.style.transform=openAll?'rotate(90deg)':'rotate(0deg)'});
+}
+
+function attachQcRowButtons(){
   document.querySelectorAll('.qc-edit-btn').forEach(b=>{b.onclick=function(){openEditQc(this.getAttribute('data-key'))}});
   document.querySelectorAll('.qc-del-btn').forEach(b=>{b.onclick=function(){
     const key=this.getAttribute('data-key');
@@ -3084,19 +3341,131 @@ async function doQcInput(){
   }catch(e){toast('Gagal: '+e.message,'e')}
 }
 
+let qcDashSearchQ='';
+function onQcDashSearch(){qcDashSearchQ=(document.getElementById('qcd-q')||{}).value?.toLowerCase()||'';renderQcDash()}
+function toggleQcdBatch(id,head){
+  const body=document.getElementById(id);if(!body)return;
+  const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  const caret=head.querySelector('.qcd-caret');
+  if(caret)caret.style.transform=open?'rotate(0deg)':'rotate(90deg)';
+}
+function toggleAllQcdBatch(openAll){
+  document.querySelectorAll('#qcd-tbody [id^="qcdbatch-"]').forEach(b=>{b.style.display=openAll?'block':'none'});
+  document.querySelectorAll('#qcd-tbody .qcd-caret').forEach(c=>{c.style.transform=openAll?'rotate(90deg)':'rotate(0deg)'});
+}
+
 function renderQcDash(){
-  const arr=qcArr();
-  const totalQc=arr.reduce((s,q)=>s+(parseInt(q.totalQc,10)||0),0);
-  const totalRusak=arr.reduce((s,q)=>s+(parseInt(q.qtyRusak,10)||0),0);
   const setTxt=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
-  setTxt('qcd-totalqc',totalQc);
-  setTxt('qcd-totalrusak',totalRusak);
-  setTxt('qcd-persen',(totalQc>0?(totalRusak/totalQc*100):0).toFixed(2)+'%');
-  setTxt('qcd-count',arr.length);
-  // Breakdown helper
+  const arr=qcArr();
+  // Total produksi diambil dari data batch (dijumlah per batch+produk unik)
+  const prodMap={};
+  batchArr().forEach(b=>{
+    const key=(b.kode||'-')+'||'+(b.produk||'-');
+    prodMap[key]=(prodMap[key]||0)+(parseInt(b.qty,10)||0);
+  });
+  // Agregasi QC per batch+produk
+  const agg={};
+  arr.forEach(q=>{
+    const key=(q.batch||'-')+'||'+(q.produk||'-');
+    if(!agg[key])agg[key]={batch:q.batch||'-',produk:q.produk||'-',qc:0,rusak:0};
+    agg[key].qc+=parseInt(q.totalQc,10)||0;
+    agg[key].rusak+=parseInt(q.qtyRusak,10)||0;
+  });
+  // Gabungkan: semua kombinasi batch+produk dari QC dan dari batch
+  const allKeys=new Set([...Object.keys(agg),...Object.keys(prodMap)]);
+  let rows=[...allKeys].map(key=>{
+    const[batch,produk]=key.split('||');
+    const a=agg[key]||{qc:0,rusak:0};
+    return{batch,produk,produksi:prodMap[key]||0,qc:a.qc,rusak:a.rusak};
+  });
+  // Filter search
+  if(qcDashSearchQ)rows=rows.filter(r=>(r.batch+' '+r.produk).toLowerCase().includes(qcDashSearchQ));
+  // Hanya tampilkan yang ada aktivitas (produksi atau qc)
+  rows=rows.filter(r=>r.produksi>0||r.qc>0||r.rusak>0);
+  rows.sort((a,b)=>a.batch.localeCompare(b.batch)||a.produk.localeCompare(b.produk));
+
+  // Summary totals (dari rows yang tampil)
+  const tProd=rows.reduce((s,r)=>s+r.produksi,0);
+  const tQc=rows.reduce((s,r)=>s+r.qc,0);
+  const tRusak=rows.reduce((s,r)=>s+r.rusak,0);
+  setTxt('qcd-totalprod',tProd.toLocaleString('id-ID'));
+  setTxt('qcd-totalqc',tQc.toLocaleString('id-ID'));
+  setTxt('qcd-totalrusak',tRusak.toLocaleString('id-ID'));
+  setTxt('qcd-persen',(tQc>0?(tRusak/tQc*100):0).toFixed(2)+'%');
+
+  // Rekap per Batch & Produk — dikelompokkan per batch, full width
+  const tbody=document.getElementById('qcd-tbody');
+  if(tbody){
+    if(!rows.length){tbody.innerHTML=emp('Belum ada data');}
+    else{
+      // Kelompokkan rows per batch
+      const byBatch={};
+      rows.forEach(r=>{if(!byBatch[r.batch])byBatch[r.batch]=[];byBatch[r.batch].push(r)});
+      const batchKeys=Object.keys(byBatch).sort();
+      let html='';
+      batchKeys.forEach((bk,bi)=>{
+        const list=byBatch[bk];
+        const bProd=list.reduce((s,r)=>s+r.produksi,0);
+        const bQc=list.reduce((s,r)=>s+r.qc,0);
+        const bRusak=list.reduce((s,r)=>s+r.rusak,0);
+        const bp=bQc>0?(bRusak/bQc*100):0;
+        const bcol=bp>=5?'#d95f5f':(bp>=2?'#d4924a':'#3a6358');
+        const withProd=list.filter(r=>r.produksi>0);
+        const batchCocok=withProd.length>0&&withProd.every(r=>r.qc===r.produksi);
+        const headBg=batchCocok?'#e3f6ea':'#eef3f8';
+        const headBorder=batchCocok?'border-bottom:1px solid #b8e6c9':'border-bottom:1px solid #dde6f0';
+        const cocokBadge=batchCocok?'<span style="font-size:10px;font-weight:800;color:#2e7d55;background:#c9efd8;border:1px solid #98d9b3;border-radius:20px;padding:2px 10px">✓ Cocok</span>':'';
+        const bodyId='qcdbatch-'+bi;
+        const bodyOpen=!!qcDashSearchQ; // kalau lagi search, buka otomatis
+        // Header batch (klik untuk buka/tutup)
+        html+=`<div onclick="toggleQcdBatch('${bodyId}',this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:13px 16px;background:${headBg};${headBorder}">
+          <span style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:900;color:#2d3e50">
+            <span class="qcd-caret" style="display:inline-block;transition:transform .18s;color:var(--mu);font-size:12px;transform:${bodyOpen?'rotate(90deg)':'rotate(0deg)'}">▶</span>
+            📦 ${bk} ${cocokBadge}
+          </span>
+          <span style="font-size:12px;font-weight:800;color:${bcol};flex-shrink:0">${bRusak.toLocaleString('id-ID')} rusak &bull; ${bp.toFixed(1)}%</span>
+        </div>`;
+        // Body (produk)
+        html+=`<div id="${bodyId}" style="display:${bodyOpen?'block':'none'}">`;
+        // Baris produk
+        list.forEach(r=>{
+          const p=r.qc>0?(r.rusak/r.qc*100):0;
+          const col=p>=5?'#d95f5f':(p>=2?'#d4924a':'#3a6358');
+          const cocok=r.produksi>0&&r.qc===r.produksi;
+          const belum=r.produksi>0&&r.qc>0&&r.qc<r.produksi;
+          const bgRow=cocok?'#eefaf1':'#fff';
+          const borderRow=cocok?'border-left:4px solid #4caf7d':'border-left:4px solid transparent';
+          let badge='';
+          if(cocok)badge='<span style="font-size:10px;font-weight:800;color:#2e7d55;background:#d6f2e1;border:1px solid #a8dfc0;border-radius:20px;padding:2px 9px">✓ Cocok</span>';
+          else if(belum)badge='<span style="font-size:10px;font-weight:800;color:#b8792a;background:#fdf1dd;border:1px solid #eecfa0;border-radius:20px;padding:2px 9px">⏳ Belum lengkap</span>';
+          else if(r.qc===0&&r.produksi>0)badge='<span style="font-size:10px;font-weight:800;color:#7a8290;background:#eef1f5;border:1px solid #d5dbe3;border-radius:20px;padding:2px 9px">Belum QC</span>';
+          html+=`<div style="padding:11px 16px;border-bottom:1px solid #f4f6f9;background:${bgRow};${borderRow}">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px">
+              <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span style="font-size:13px;font-weight:700;color:#2d3e50">${r.produk}</span>
+                ${badge}
+              </div>
+              <span style="font-size:14px;font-weight:900;color:${col};flex-shrink:0">${p.toFixed(2)}%</span>
+            </div>
+            <div style="display:flex;gap:16px;font-size:11px;color:var(--mu)">
+              <span>Produksi: <strong style="color:#3a5068">${r.produksi.toLocaleString('id-ID')}</strong></span>
+              <span>QC: <strong style="color:#3a5068">${r.qc.toLocaleString('id-ID')}</strong></span>
+              <span>Rusak: <strong style="color:#d95f5f">${r.rusak.toLocaleString('id-ID')}</strong></span>
+            </div>
+          </div>`;
+        });
+        html+=`</div>`;
+      });
+      tbody.innerHTML=html;
+    }
+  }
+
+  // Breakdown bar helper (per jenis & per produk)
   const breakdown=(field)=>{
     const map={};
     arr.forEach(q=>{
+      if(qcDashSearchQ&&!((q.batch||'')+' '+(q.produk||'')).toLowerCase().includes(qcDashSearchQ))return;
       const k=q[field]||'-';
       if(!map[k])map[k]={rusak:0,total:0};
       map[k].rusak+=parseInt(q.qtyRusak,10)||0;
@@ -3104,12 +3473,13 @@ function renderQcDash(){
     });
     return Object.entries(map).sort((a,b)=>b[1].rusak-a[1].rusak);
   };
-  const renderBreak=(id,field)=>{
+  const renderBreak=(id,field,limit)=>{
     const el=document.getElementById(id);if(!el)return;
-    const rows=breakdown(field);
-    if(!rows.length){el.innerHTML=emp('Belum ada data');return}
-    const maxRusak=Math.max(...rows.map(r=>r[1].rusak),1);
-    el.innerHTML=rows.map(([nama,d])=>{
+    let rows2=breakdown(field);
+    if(limit)rows2=rows2.slice(0,limit);
+    if(!rows2.length){el.innerHTML=emp('Belum ada data');return}
+    const maxRusak=Math.max(...rows2.map(r=>r[1].rusak),1);
+    el.innerHTML=rows2.map(([nama,d])=>{
       const p=d.total>0?(d.rusak/d.total*100):0;
       const barW=Math.round(d.rusak/maxRusak*100);
       const col=p>=5?'#d95f5f':(p>=2?'#d4924a':'#4f7c6e');
@@ -3122,9 +3492,8 @@ function renderQcDash(){
       </div>`;
     }).join('');
   };
-  renderBreak('qcd-batch','batch');
+  renderBreak('qcd-jenis','jenis',10);
   renderBreak('qcd-produk','produk');
-  renderBreak('qcd-jenis','jenis');
 }
 
 function exportQcExcel(){
@@ -3352,7 +3721,7 @@ function go(pg,el){
     if(parent)parent.classList.add('on');
   }
   // Auto-expand grup Master Data
-  if(pg==='sku'||pg==='jeniskerusakan'){
+  if(pg==='sku'||pg==='skurusak'||pg==='jeniskerusakan'){
     const sub=document.getElementById('sd-master-sub');
     const caret=document.getElementById('sd-master-caret');
     const parent=document.getElementById('sd-master-group');
@@ -3371,6 +3740,7 @@ function go(pg,el){
   if(pg==='rekondisi'){renderRekon();setTimeout(()=>updateChipArrows('rekon-tabs'),100)}
   if(pg==='trxrusak'){renderTrxRusak();setTimeout(()=>updateChipArrows('trxrusak-tabs'),100)}
   if(pg==='jeniskerusakan')renderJenisKerusakan();
+  if(pg==='skurusak')renderSkuRusakList();
   if(pg==='qclog'){renderQcLog();setTimeout(()=>updateChipArrows('qc-chips'),100)}
   if(pg==='qcdash')renderQcDash();
   if(pg==='qcbatch')renderBatchList();
