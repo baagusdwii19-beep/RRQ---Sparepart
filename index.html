@@ -787,6 +787,7 @@ body.is-admin button.admin-only{display:inline-flex!important}
 <div class="mo" id="m-in"><div class="md">
   <div class="md-handle"></div>
   <div class="mt">Input Stok Masuk</div>
+  <div style="font-size:12px;color:var(--mu);margin-bottom:10px">Pilih SKU & jumlah, lalu tap "＋ Tambah". Bisa banyak SKU sekaligus.</div>
   <div class="fg">
     <label class="fl">Sparepart</label>
     <div class="sp-picker">
@@ -795,10 +796,14 @@ body.is-admin button.admin-only{display:inline-flex!important}
       <div class="sp-dropdown" id="i-sku-dropdown" style="display:none"></div>
     </div>
   </div>
-  <div class="fg"><label class="fl">Jumlah</label><input class="fi" type="number" id="i-qty" min="1"></div>
-  <div class="fg"><label class="fl">Keterangan</label><input class="fi" id="i-ket" placeholder="Supplier / PO..."></div>
+  <div style="display:flex;gap:8px;align-items:flex-end">
+    <div class="fg" style="flex:1;margin-bottom:0"><label class="fl">Jumlah</label><input class="fi" type="number" id="i-qty" min="1" onkeydown="if(event.key==='Enter'){event.preventDefault();addMutasiRow('i')}"></div>
+    <button class="btn bp" style="height:44px;white-space:nowrap" onclick="addMutasiRow('i')">＋ Tambah</button>
+  </div>
+  <div class="fg" style="margin-top:12px"><label class="fl">Keterangan (untuk semua)</label><input class="fi" id="i-ket" placeholder="Supplier / PO..."></div>
+  <div id="i-cart" style="margin:6px 0 12px"></div>
   <div class="mf">
-    <button class="btn bp btn-full" onclick="doInput()">Simpan</button>
+    <button class="btn bp btn-full" onclick="doInputMulti()">Simpan Semua</button>
     <button class="btn bo btn-full" onclick="closeM('m-in')">Batal</button>
   </div>
 </div></div>
@@ -806,6 +811,7 @@ body.is-admin button.admin-only{display:inline-flex!important}
 <div class="mo" id="m-out"><div class="md">
   <div class="md-handle"></div>
   <div class="mt">Potong Stok Keluar</div>
+  <div style="font-size:12px;color:var(--mu);margin-bottom:10px">Pilih SKU & jumlah, lalu tap "＋ Tambah". Bisa banyak SKU sekaligus.</div>
   <div class="fg">
     <label class="fl">Sparepart</label>
     <div class="sp-picker">
@@ -814,11 +820,15 @@ body.is-admin button.admin-only{display:inline-flex!important}
       <div class="sp-dropdown" id="o-sku-dropdown" style="display:none"></div>
     </div>
   </div>
-  <div id="o-info" style="font-size:12px;color:var(--mu);margin:-8px 0 12px;font-weight:600"></div>
-  <div class="fg"><label class="fl">Jumlah</label><input class="fi" type="number" id="o-qty" min="1"></div>
-  <div class="fg"><label class="fl">Keterangan</label><input class="fi" id="o-ket"></div>
+  <div id="o-info" style="font-size:12px;color:var(--mu);margin:-4px 0 10px;font-weight:600"></div>
+  <div style="display:flex;gap:8px;align-items:flex-end">
+    <div class="fg" style="flex:1;margin-bottom:0"><label class="fl">Jumlah</label><input class="fi" type="number" id="o-qty" min="1" onkeydown="if(event.key==='Enter'){event.preventDefault();addMutasiRow('o')}"></div>
+    <button class="btn br" style="height:44px;white-space:nowrap" onclick="addMutasiRow('o')">＋ Tambah</button>
+  </div>
+  <div class="fg" style="margin-top:12px"><label class="fl">Keterangan (untuk semua)</label><input class="fi" id="o-ket"></div>
+  <div id="o-cart" style="margin:6px 0 12px"></div>
   <div class="mf">
-    <button class="btn br btn-full" id="o-submit" onclick="doOutput()">Potong Stok</button>
+    <button class="btn br btn-full" id="o-submit" onclick="doOutputMulti()">Potong Semua</button>
     <button class="btn bo btn-full" onclick="closeM('m-out')">Batal</button>
   </div>
 </div></div>
@@ -1844,6 +1854,87 @@ function renderRiw(){
   </div>`).join('')+pagerHTML('riw',pg.page,pg.total,pg.count):emp('Tidak ada data');
 }
 
+
+// ══ MUTASI MULTI-SKU (keranjang) ══
+let mutasiCart={i:[],o:[]}; // i=input, o=output
+function addMutasiRow(pfx){
+  const key=document.getElementById(pfx+'-sku').value;
+  const qty=parseInt(document.getElementById(pfx+'-qty').value)||0;
+  if(!key)return toast('Pilih sparepart dulu','e');
+  if(qty<1)return toast('Jumlah harus > 0','e');
+  const sp=allS[key];
+  if(!sp)return toast('SKU tidak ditemukan','e');
+  // Untuk potong: cek stok cukup (termasuk yang sudah di keranjang)
+  if(pfx==='o'){
+    const sudah=mutasiCart.o.filter(x=>x.key===key).reduce((s,x)=>s+x.qty,0);
+    if((sp.stok||0)<qty+sudah)return toast('Stok tidak cukup: '+sp.stok+(sudah?' (sudah '+sudah+' di daftar)':''),'e');
+  }
+  // Kalau SKU sudah ada di keranjang, gabung qty-nya
+  const existing=mutasiCart[pfx].find(x=>x.key===key);
+  if(existing){existing.qty+=qty;}
+  else{mutasiCart[pfx].push({key,nama:sp.nama,sku:sp.sku,qty});}
+  // Reset input SKU & qty
+  document.getElementById(pfx+'-sku').value='';
+  document.getElementById(pfx+'-sku-search').value='';
+  document.getElementById(pfx+'-qty').value='';
+  if(pfx==='o')document.getElementById('o-info').innerHTML='';
+  renderMutasiCart(pfx);
+  document.getElementById(pfx+'-sku-search').focus();
+}
+function removeMutasiRow(pfx,idx){
+  mutasiCart[pfx].splice(idx,1);
+  renderMutasiCart(pfx);
+}
+function renderMutasiCart(pfx){
+  const el=document.getElementById(pfx+'-cart');if(!el)return;
+  const cart=mutasiCart[pfx];
+  const isIn=pfx==='i';
+  if(!cart.length){el.innerHTML='<div style="text-align:center;color:var(--mu);font-size:12px;padding:10px;background:#f7fafc;border-radius:8px">Belum ada SKU ditambahkan</div>';return}
+  const total=cart.reduce((s,x)=>s+x.qty,0);
+  el.innerHTML=`<div style="border:1.5px solid var(--bd);border-radius:10px;overflow:hidden">
+    <div style="background:#f0f4f8;padding:8px 12px;font-size:12px;font-weight:800;color:#3a5068;display:flex;justify-content:space-between">
+      <span>${cart.length} SKU</span><span>Total: ${isIn?'+':'-'}${total}</span>
+    </div>
+    ${cart.map((x,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid #f0f2f5">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${x.nama}</div>
+        <div style="font-size:10px;color:var(--mu)">${x.sku||''}</div>
+      </div>
+      <span style="font-size:14px;font-weight:900;color:${isIn?'#3a6358':'#d95f5f'};flex-shrink:0">${isIn?'+':'-'}${x.qty}</span>
+      <button onclick="removeMutasiRow('${pfx}',${i})" style="flex-shrink:0;width:26px;height:26px;border-radius:6px;border:1.5px solid #f0a0a0;background:var(--rl);color:var(--red);font-weight:800;cursor:pointer;font-family:inherit;line-height:1">×</button>
+    </div>`).join('')}
+  </div>`;
+}
+async function doInputMulti(){
+  const ket=document.getElementById('i-ket').value||'-';
+  const cart=mutasiCart.i;
+  if(!cart.length)return toast('Tambahkan minimal 1 SKU','e');
+  try{
+    let n=0;
+    for(const x of cart){
+      const sp=allS[x.key];if(!sp)continue;
+      await db.ref('transaksi').push({ts:Date.now()+n,tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,sparepart:sp.nama,sku:sp.sku,kat:sp.kat,tipe:'masuk',qty:x.qty,ket,approved:false});
+      n++;
+    }
+    toast(n+' transaksi masuk disimpan, menunggu approval');
+    closeM('m-in');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
+async function doOutputMulti(){
+  const ket=document.getElementById('o-ket').value||'-';
+  const cart=mutasiCart.o;
+  if(!cart.length)return toast('Tambahkan minimal 1 SKU','e');
+  try{
+    let n=0;
+    for(const x of cart){
+      const sp=allS[x.key];if(!sp)continue;
+      await db.ref('transaksi').push({ts:Date.now()+n,tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,sparepart:sp.nama,sku:sp.sku,kat:sp.kat,tipe:'keluar',qty:x.qty,ket,approved:false});
+      n++;
+    }
+    toast(n+' transaksi keluar disimpan, menunggu approval');
+    closeM('m-out');
+  }catch(e){toast('Gagal: '+e.message,'e')}
+}
 
 async function doInput(){
   const key=document.getElementById('i-sku').value;
@@ -3621,6 +3712,9 @@ function openM(id){
     document.getElementById('i-sku').value='';
     document.getElementById('i-sku-search').value='';
     document.getElementById('i-sku-dropdown').style.display='none';
+    document.getElementById('i-qty').value='';
+    document.getElementById('i-ket').value='';
+    mutasiCart.i=[];renderMutasiCart('i');
     renderSpDropdown('i','');
     setTimeout(()=>document.getElementById('i-sku-search').focus(),200);
   }
@@ -3628,6 +3722,9 @@ function openM(id){
     document.getElementById('o-sku').value='';
     document.getElementById('o-sku-search').value='';
     document.getElementById('o-sku-dropdown').style.display='none';
+    document.getElementById('o-qty').value='';
+    document.getElementById('o-ket').value='';
+    mutasiCart.o=[];renderMutasiCart('o');
     renderSpDropdown('o','');
     updOutInfo();
     setTimeout(()=>document.getElementById('o-sku-search').focus(),200);
