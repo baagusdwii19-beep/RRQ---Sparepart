@@ -63,6 +63,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f2f5f9;color:#1e253
 
 /* STAT CARDS */
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px;margin-bottom:14px}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 2px}
+.dash-tile{background:#fff;border-radius:16px;border:1px solid var(--bd);padding:15px 15px 14px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s}
+.dash-tile::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--tile)}
+.dash-tile:active{transform:scale(.98)}
+.dash-tile-ico{width:38px;height:38px;border-radius:11px;background:var(--tilebg);display:flex;align-items:center;justify-content:center;font-size:19px;margin-bottom:12px}
+.dash-tile-val{font-size:26px;font-weight:900;line-height:1;color:var(--tile)}
+.dash-tile-lbl{font-size:11px;font-weight:600;color:var(--mu);margin-top:4px}
+@media(min-width:1024px){.dash-grid{grid-template-columns:repeat(4,1fr)}}
+.dash-2col{display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:640px){.dash-2col{grid-template-columns:1fr 1fr;gap:12px}}
 .sc{background:#fff;border-radius:14px;border:1px solid var(--bd);padding:14px}
 .sc-label{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;margin-bottom:8px}
 .sc-val{font-size:26px;font-weight:900;line-height:1;margin-bottom:3px}
@@ -336,15 +346,89 @@ body.is-admin button.admin-only{display:inline-flex!important}
   <div class="main">
     <!-- DASHBOARD -->
     <div class="page on" id="page-dashboard">
-      <div class="section-title">Dashboard</div>
-      <div class="sgrid">
-        <div class="sc"><div class="sc-label">Total SKU</div><div class="sc-val" id="d-sku">0</div><div class="sc-sub">jenis sparepart</div></div>
-        <div class="sc"><div class="sc-label">Total Stok</div><div class="sc-val" id="d-stok">0</div><div class="sc-sub">unit tersedia</div></div>
-        <div class="sc"><div class="sc-label">Stok Kritis</div><div class="sc-val" id="d-low" style="color:#b5620a">0</div><div class="sc-sub">perlu restock</div></div>
-        <div class="sc"><div class="sc-label">Karyawan</div><div class="sc-val" id="d-kar">0</div><div class="sc-sub">terdaftar</div></div>
+      <!-- Header sambutan -->
+      <div id="d-hero" style="background:linear-gradient(135deg,#4f7c6e 0%,#3a6358 100%);border-radius:18px;padding:22px 22px 20px;color:#fff;margin-bottom:16px;box-shadow:0 6px 20px rgba(79,124,110,.25)">
+        <div style="font-size:13px;opacity:.85;font-weight:600" id="d-greet">Selamat datang</div>
+        <div style="font-size:22px;font-weight:900;margin-top:2px" id="d-hero-name">RRQ Sparepart</div>
+        <div style="display:flex;gap:20px;margin-top:16px;flex-wrap:wrap">
+          <div><div style="font-size:26px;font-weight:900;line-height:1" id="d-hero-stok">0</div><div style="font-size:11px;opacity:.8;margin-top:3px">Total stok sparepart</div></div>
+          <div style="width:1px;background:rgba(255,255,255,.25)"></div>
+          <div><div style="font-size:26px;font-weight:900;line-height:1" id="d-hero-rusak">0</div><div style="font-size:11px;opacity:.8;margin-top:3px">Total barang rusak</div></div>
+        </div>
       </div>
-      <div class="card"><div class="ch"><span class="ct">Stok Kritis</span><button class="collapse-btn" onclick="toggleC('d-alerts',this)">Tutup</button></div><div id="d-alerts" class="collapsible cb"></div></div>
-      <div class="card"><div class="ch"><span class="ct">Transaksi Terbaru</span><button class="collapse-btn" onclick="toggleC('d-recent',this)">Tutup</button></div><div id="d-recent" class="collapsible"></div></div>
+
+      <!-- Seksi Sparepart -->
+      <div style="display:flex;align-items:center;gap:8px;margin:0 2px 10px">
+        <span style="font-size:15px">🔩</span><span style="font-size:15px;font-weight:800;color:var(--text)">Sparepart</span>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-tile" style="--tile:#4f7c6e;--tilebg:#e8f3f0">
+          <div class="dash-tile-ico">📦</div>
+          <div class="dash-tile-val" id="d-sku">0</div>
+          <div class="dash-tile-lbl">Jenis SKU</div>
+        </div>
+        <div class="dash-tile" style="--tile:#3a6358;--tilebg:#e8f3f0">
+          <div class="dash-tile-ico">🔢</div>
+          <div class="dash-tile-val" id="d-stok">0</div>
+          <div class="dash-tile-lbl">Unit tersedia</div>
+        </div>
+        <div class="dash-tile" style="--tile:#d4924a;--tilebg:#fdf5ea">
+          <div class="dash-tile-ico">⚠️</div>
+          <div class="dash-tile-val" id="d-low">0</div>
+          <div class="dash-tile-lbl">Stok kritis</div>
+        </div>
+        <div class="dash-tile" style="--tile:#4a7ab5;--tilebg:#edf3fb">
+          <div class="dash-tile-ico">👥</div>
+          <div class="dash-tile-val" id="d-kar">0</div>
+          <div class="dash-tile-lbl">Karyawan</div>
+        </div>
+      </div>
+
+      <!-- Seksi Barang Rusak -->
+      <div style="display:flex;align-items:center;gap:8px;margin:18px 2px 10px">
+        <span style="font-size:15px">🛠</span><span style="font-size:15px;font-weight:800;color:var(--text)">Barang Rusak</span>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-tile" style="--tile:#d95f5f;--tilebg:#fdf0f0">
+          <div class="dash-tile-ico">🧩</div>
+          <div class="dash-tile-val" id="d-rusak-item">0</div>
+          <div class="dash-tile-lbl">Jenis item</div>
+        </div>
+        <div class="dash-tile" style="--tile:#c14a4a;--tilebg:#fdf0f0">
+          <div class="dash-tile-ico">📉</div>
+          <div class="dash-tile-val" id="d-rusak-qty">0</div>
+          <div class="dash-tile-lbl">Total unit rusak</div>
+        </div>
+        <div class="dash-tile" style="--tile:#8a6d3b;--tilebg:#f7f1e6">
+          <div class="dash-tile-ico">🔧</div>
+          <div class="dash-tile-val" id="d-rekon">0</div>
+          <div class="dash-tile-lbl">Rekondisi (approved)</div>
+        </div>
+        <div class="dash-tile" style="--tile:#7a8290;--tilebg:#eef1f5">
+          <div class="dash-tile-ico">⏳</div>
+          <div class="dash-tile-val" id="d-pending">0</div>
+          <div class="dash-tile-lbl">Mutasi pending</div>
+        </div>
+      </div>
+
+      <!-- GRAFIK -->
+      <div class="card" style="margin-top:18px">
+        <div class="ch"><span class="ct">📊 Tren Mutasi 7 Hari Terakhir</span></div>
+        <div class="cb"><div id="d-chart-trend"></div></div>
+      </div>
+      <div class="dash-2col">
+        <div class="card">
+          <div class="ch"><span class="ct">🍩 Kesehatan Stok</span></div>
+          <div class="cb"><div id="d-chart-donut"></div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct">🏆 Top Barang Rusak</span></div>
+          <div class="cb"><div id="d-chart-rusak"></div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:6px"><div class="ch"><span class="ct">⚠️ Stok Kritis</span><button class="collapse-btn" onclick="toggleC('d-alerts',this)">Tutup</button></div><div id="d-alerts" class="collapsible cb"></div></div>
+      <div class="card"><div class="ch"><span class="ct">🕐 Transaksi Terbaru</span><button class="collapse-btn" onclick="toggleC('d-recent',this)">Tutup</button></div><div id="d-recent" class="collapsible"></div></div>
       <div class="credit">Dibuat oleh <strong>GII-BOX</strong></div>
     </div>
 
@@ -516,6 +600,16 @@ body.is-admin button.admin-only{display:inline-flex!important}
             <br>Data yang sudah ada tidak dihapus — hanya ditambahkan.
           </div>
           <button class="btn bp btn-full" onclick="importSeedData()">📥 Import Sekarang</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">🩺 Cek Kesehatan Data</span></div>
+        <div class="cb">
+          <div style="font-size:13px;line-height:1.6;color:#4a5568;margin-bottom:14px">
+            Memeriksa apakah stok tiap SKU <strong>cocok</strong> dengan hitungan transaksi yang sudah di-approve. Berguna untuk menemukan stok yang salah / transaksi nyasar.
+          </div>
+          <button class="btn bo btn-full" onclick="cekKesehatanData()">🩺 Jalankan Pemeriksaan</button>
+          <div id="health-result" style="margin-top:14px"></div>
         </div>
       </div>
     </div>
@@ -1187,15 +1281,15 @@ function listen(){
   });
   db.ref('rusak').on('value',snap=>{
     allRusak={};if(snap.val())snap.forEach(c=>{allRusak[c.key]={...c.val(),_key:c.key}});
-    renderRusak();
+    renderRusak();renderDash();
   });
   db.ref('rekondisi').orderByChild('ts').on('value',snap=>{
     allRekon={};if(snap.val())snap.forEach(c=>{allRekon[c.key]={...c.val(),_key:c.key}});
-    renderRekon();
+    renderRekon();renderDash();
   });
   db.ref('transaksiRusak').orderByChild('ts').on('value',snap=>{
     allTrxRusak={};if(snap.val())snap.forEach(c=>{allTrxRusak[c.key]={...c.val(),_key:c.key}});
-    renderTrxRusak();
+    renderTrxRusak();renderDash();
   });
   db.ref('qc').orderByChild('ts').on('value',snap=>{
     allQc={};if(snap.val())snap.forEach(c=>{allQc[c.key]={...c.val(),_key:c.key}});
@@ -1554,8 +1648,13 @@ function showDetailSKU(sku,nama){
     const tnama=(t.sparepart||'').toLowerCase();
     return tsku===skuLow||tnama===namaLow;
   });
-  const masuk=trxs.filter(t=>t.tipe==='masuk').reduce((s,t)=>s+t.qty,0);
-  const keluar=trxs.filter(t=>t.tipe==='keluar').reduce((s,t)=>s+t.qty,0);
+  // Masuk/Keluar dihitung HANYA dari transaksi yang sudah di-approve,
+  // karena hanya transaksi approved yang mempengaruhi stok. Ini bikin
+  // angka Masuk - Keluar konsisten dengan Stok.
+  const approvedTrx=trxs.filter(t=>t.approved);
+  const masuk=approvedTrx.filter(t=>t.tipe==='masuk').reduce((s,t)=>s+t.qty,0);
+  const keluar=approvedTrx.filter(t=>t.tipe==='keluar').reduce((s,t)=>s+t.qty,0);
+  const pendingCount=trxs.filter(t=>!t.approved).length;
   const sp=sArr().find(v=>v.sku===sku);
   const stok=sp?sp.stok:0;
   document.getElementById('detail-title').textContent=nama;
@@ -1565,10 +1664,12 @@ function showDetailSKU(sku,nama){
   document.getElementById('detail-keluar').textContent='-'+keluar;
   document.getElementById('detail-trx-cnt').textContent=trxs.length;
   const list=document.getElementById('detail-trx-list');
-  list.innerHTML=trxs.length?trxs.map(t=>`<div style="padding:11px 14px;border-bottom:1px solid #f4f6f9;display:flex;gap:10px">
+  list.innerHTML=trxs.length?
+    (pendingCount?`<div style="background:#fdf5ea;border:1px solid #eecfa0;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:11px;color:#8a6d3b;font-weight:600">⏳ ${pendingCount} transaksi belum di-approve (belum masuk hitungan stok)</div>`:'')+
+    trxs.map(t=>`<div style="padding:11px 14px;border-bottom:1px solid #f4f6f9;display:flex;gap:10px;${!t.approved?'opacity:.55':''}">
     <div style="width:8px;height:8px;border-radius:50%;background:${t.tipe==='masuk'?'#4f7c6e':'#d95f5f'};margin-top:5px"></div>
     <div style="flex:1;min-width:0">
-      <div style="font-size:12px;font-weight:700">${t.karyawan}</div>
+      <div style="font-size:12px;font-weight:700">${t.karyawan}${!t.approved?' <span style="font-size:9px;color:#8a6d3b;font-weight:700;background:#fdf5ea;padding:1px 6px;border-radius:10px">PENDING</span>':''}</div>
       <div style="font-size:11px;color:var(--mu)">${t.tanggal} ${t.waktu}${t.ket&&t.ket!=='-'?' &bull; '+t.ket:''}</div>
     </div>
     <div style="text-align:right">
@@ -1669,9 +1770,11 @@ async function unapproveItem(key){
       });
       if(!res.committed||res.snapshot.val()!==false){toast('Status sudah berubah');return}
       await db.ref('transaksi/'+key+'/approvedAt').set('');
-      // Kembalikan stok (kebalikan dari approve)
-      const sp=findSp(t);
-      if(sp)await adjustStokAtomic(sp._key,t.tipe==='masuk'?-t.qty:t.qty);
+      // Kembalikan stok (kebalikan dari approve) — kecuali transaksi 'Stok awal'
+      if(!t.isInitial){
+        const sp=findSp(t);
+        if(sp)await adjustStokAtomic(sp._key,t.tipe==='masuk'?-t.qty:t.qty);
+      }
       toast('Approval dibatalkan');
     });
   }catch(e){toast('Gagal','e')}
@@ -1686,8 +1789,8 @@ async function editTrx(key){
   const ket=prompt('Edit keterangan:',t.ket||'-');
   if(ket===null)return;
   try{
-    if(t.approved){
-      // Sesuaikan stok dengan selisih (atomik)
+    if(t.approved&&!t.isInitial){
+      // Sesuaikan stok dengan selisih (atomik) — kecuali 'Stok awal'
       const diff=qty-t.qty;
       const sp=findSp(t);
       if(sp&&diff!==0){
@@ -1710,8 +1813,8 @@ async function delTrx(key){
         return true;
       });
       if(!res.committed||res.snapshot.val()!==true){toast('Transaksi sudah dihapus');return}
-      // Kalau tadinya approved, kembalikan stok (atomik)
-      if(wasApproved){
+      // Kalau tadinya approved, kembalikan stok (atomik) — kecuali 'Stok awal'
+      if(wasApproved&&!t.isInitial){
         const sp=findSp(t);
         if(sp)await adjustStokAtomic(sp._key,t.tipe==='masuk'?-t.qty:t.qty);
       }
@@ -1806,23 +1909,145 @@ async function saveEditKar(){
 
 function renderDash(){
   const sv=sArr();
-  const dSku=document.getElementById('d-sku');if(dSku)dSku.textContent=sv.length;
-  const dStok=document.getElementById('d-stok');if(dStok)dStok.textContent=sv.reduce((s,v)=>s+(v.stok||0),0).toLocaleString();
-  const dLow=document.getElementById('d-low');if(dLow)dLow.textContent=sv.filter(v=>v.stok<=v.min).length;
-  const dKar=document.getElementById('d-kar');if(dKar)dKar.textContent=kArr().length;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  // Hero
+  set('d-hero-name',currentUser?currentUser.nama:'RRQ Sparepart');
+  const jam=new Date().getHours();
+  const salam=jam<11?'Selamat pagi':(jam<15?'Selamat siang':(jam<18?'Selamat sore':'Selamat malam'));
+  set('d-greet',salam+' 👋');
+  const totalStok=sv.reduce((s,v)=>s+(v.stok||0),0);
+  const rusakArrAll=Object.values(allRusak||{});
+  const totalRusak=rusakArrAll.reduce((s,v)=>s+(v.qty||0),0);
+  set('d-hero-stok',totalStok.toLocaleString('id-ID'));
+  set('d-hero-rusak',totalRusak.toLocaleString('id-ID'));
+  // Sparepart tiles
+  set('d-sku',sv.length);
+  set('d-stok',totalStok.toLocaleString('id-ID'));
+  set('d-low',sv.filter(v=>v.stok<=v.min).length);
+  set('d-kar',kArr().length);
+  // Barang rusak tiles
+  set('d-rusak-item',rusakArrAll.length);
+  set('d-rusak-qty',totalRusak.toLocaleString('id-ID'));
+  const rekonApproved=Object.values(allRekon||{}).filter(r=>r.approved&&!r.deleted).length;
+  set('d-rekon',rekonApproved);
+  const pendingSp=tArr().filter(t=>!t.approved).length;
+  const pendingRusak=Object.values(allTrxRusak||{}).filter(t=>!t.approved&&!t.deleted).length;
+  set('d-pending',pendingSp+pendingRusak);
+  // Stok kritis
   const da=document.getElementById('d-alerts');
   if(da){
-    const lows=sv.filter(v=>v.stok<=v.min).slice(0,10);
-    da.innerHTML=lows.length?lows.map(v=>`<div class="alert ad"><strong>${v.nama}</strong> — kritis: ${v.stok} unit (min: ${v.min})</div>`).join(''):'<p class="empty" style="padding:14px">Semua stok aman</p>';
+    const lows=sv.filter(v=>v.stok<=v.min).sort((a,b)=>(a.stok-a.min)-(b.stok-b.min)).slice(0,10);
+    da.innerHTML=lows.length?lows.map(v=>{
+      const habis=(v.stok||0)<=0;
+      return`<div style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid #f4f6f9">
+        <div style="width:8px;height:8px;border-radius:50%;background:${habis?'#d95f5f':'#d4924a'};flex-shrink:0"></div>
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${v.nama}</div><div style="font-size:11px;color:var(--mu)">min: ${v.min} ${v.sat||'pcs'}</div></div>
+        <div style="text-align:right;flex-shrink:0"><span style="font-size:15px;font-weight:900;color:${habis?'#d95f5f':'#d4924a'}">${v.stok||0}</span> <span style="font-size:11px;color:var(--mu)">${v.sat||'pcs'}</span></div>
+      </div>`;
+    }).join(''):'<div style="text-align:center;padding:18px;color:#3a6358;font-weight:600">✓ Semua stok aman</div>';
   }
+  // Transaksi terbaru
   const dr=document.getElementById('d-recent');
   if(dr){
-    const rec=tArr().slice(0,5);
-    dr.innerHTML=rec.length?rec.map(t=>`<div class="hi">
-      <div class="hi-dot" style="background:${t.tipe==='masuk'?'#4f7c6e':'#d95f5f'}"></div>
-      <div class="hinf"><div class="hn">${t.sparepart}</div><div class="hm">${t.karyawan} &bull; ${t.tanggal}</div></div>
-      <div class="hq" style="color:${t.tipe==='masuk'?'#3a6358':'#d95f5f'}">${t.tipe==='masuk'?'+':'-'}${t.qty}</div>
-    </div>`).join(''):emp('Belum ada transaksi');
+    const rec=tArr().slice(0,6);
+    dr.innerHTML=rec.length?rec.map(t=>`<div style="display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid #f4f6f9">
+      <div style="width:34px;height:34px;border-radius:10px;background:${t.tipe==='masuk'?'#e8f3f0':'#fdf0f0'};display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">${t.tipe==='masuk'?'📥':'📤'}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.sparepart}</div><div style="font-size:11px;color:var(--mu)">${t.karyawan} &bull; ${t.tanggal}</div></div>
+      <div style="font-size:15px;font-weight:900;color:${t.tipe==='masuk'?'#3a6358':'#d95f5f'};flex-shrink:0">${t.tipe==='masuk'?'+':'-'}${t.qty}</div>
+    </div>`).join(''):'<div style="text-align:center;padding:18px;color:var(--mu)">Belum ada transaksi</div>';
+  }
+  renderDashCharts(sv,rusakArrAll);
+}
+
+function renderDashCharts(sv,rusakArrAll){
+  // ── 1. TREN MUTASI 7 HARI (bar chart SVG) ──
+  const trendEl=document.getElementById('d-chart-trend');
+  if(trendEl){
+    const days=[];
+    const today=new Date();
+    for(let i=6;i>=0;i--){
+      const d=new Date(today);d.setDate(d.getDate()-i);
+      const dd=String(d.getDate()).padStart(2,'0'),mm=String(d.getMonth()+1).padStart(2,'0');
+      days.push({label:['Min','Sen','Sel','Rab','Kam','Jum','Sab'][d.getDay()],tgl:dd+'/'+mm+'/'+d.getFullYear(),masuk:0,keluar:0});
+    }
+    tArr().forEach(t=>{
+      const day=days.find(d=>d.tgl===t.tanggal);
+      if(day){if(t.tipe==='masuk')day.masuk+=t.qty;else day.keluar+=t.qty}
+    });
+    const maxV=Math.max(...days.map(d=>Math.max(d.masuk,d.keluar)),1);
+    const W=340,H=150,pad=24,bw=(W-pad*2)/7,gap=4;
+    let bars='';
+    days.forEach((d,i)=>{
+      const x=pad+i*bw;
+      const hM=Math.round((d.masuk/maxV)*(H-40));
+      const hK=Math.round((d.keluar/maxV)*(H-40));
+      const halfW=(bw-gap*2)/2;
+      bars+=`<rect x="${x+gap}" y="${H-20-hM}" width="${halfW}" height="${hM}" rx="3" fill="#4f7c6e"><title>Masuk ${d.masuk}</title></rect>`;
+      bars+=`<rect x="${x+gap+halfW}" y="${H-20-hK}" width="${halfW}" height="${hK}" rx="3" fill="#d95f5f"><title>Keluar ${d.keluar}</title></rect>`;
+      bars+=`<text x="${x+bw/2}" y="${H-6}" text-anchor="middle" font-size="9" fill="#8492a6" font-weight="600">${d.label}</text>`;
+    });
+    trendEl.innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">
+      <line x1="${pad}" y1="${H-20}" x2="${W-pad}" y2="${H-20}" stroke="#e4e9f0" stroke-width="1"/>
+      ${bars}
+    </svg>
+    <div style="display:flex;justify-content:center;gap:18px;margin-top:6px">
+      <span style="font-size:11px;color:var(--mu);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#4f7c6e;border-radius:3px;display:inline-block"></span>Masuk</span>
+      <span style="font-size:11px;color:var(--mu);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#d95f5f;border-radius:3px;display:inline-block"></span>Keluar</span>
+    </div>`;
+  }
+
+  // ── 2. DONUT KESEHATAN STOK ──
+  const donutEl=document.getElementById('d-chart-donut');
+  if(donutEl){
+    const aman=sv.filter(v=>(v.stok||0)>v.min).length;
+    const menipis=sv.filter(v=>(v.stok||0)<=v.min&&(v.stok||0)>0).length;
+    const habis=sv.filter(v=>(v.stok||0)<=0).length;
+    const total=aman+menipis+habis;
+    if(!total){donutEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--mu);font-size:12px">Belum ada SKU</div>';}
+    else{
+      const segs=[{v:aman,c:'#4f7c6e',l:'Aman'},{v:menipis,c:'#d4924a',l:'Menipis'},{v:habis,c:'#d95f5f',l:'Habis'}];
+      const R=52,C=2*Math.PI*R,cx=70,cy=70;
+      let off=0,circles='';
+      segs.forEach(s=>{
+        if(s.v<=0)return;
+        const len=(s.v/total)*C;
+        circles+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${s.c}" stroke-width="16" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cy})"><title>${s.l}: ${s.v}</title></circle>`;
+        off+=len;
+      });
+      const pctAman=Math.round((aman/total)*100);
+      donutEl.innerHTML=`<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center">
+        <svg viewBox="0 0 140 140" style="width:130px;height:130px;flex-shrink:0">
+          <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#eef2f7" stroke-width="16"/>
+          ${circles}
+          <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="24" font-weight="900" fill="#3a6358">${pctAman}%</text>
+          <text x="${cx}" y="${cy+14}" text-anchor="middle" font-size="10" fill="#8492a6" font-weight="600">SEHAT</text>
+        </svg>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${segs.map(s=>`<div style="display:flex;align-items:center;gap:7px;font-size:12px"><span style="width:11px;height:11px;background:${s.c};border-radius:3px;display:inline-block"></span><span style="color:var(--mu);font-weight:600">${s.l}</span><strong style="margin-left:auto;color:${s.c}">${s.v}</strong></div>`).join('')}
+        </div>
+      </div>`;
+    }
+  }
+
+  // ── 3. TOP BARANG RUSAK (horizontal bar) ──
+  const rusakEl=document.getElementById('d-chart-rusak');
+  if(rusakEl){
+    const top=[...rusakArrAll].filter(r=>(r.qty||0)>0).sort((a,b)=>(b.qty||0)-(a.qty||0)).slice(0,5);
+    if(!top.length){rusakEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--mu);font-size:12px">Belum ada barang rusak</div>';}
+    else{
+      const maxQ=Math.max(...top.map(r=>r.qty||0),1);
+      rusakEl.innerHTML=top.map((r,i)=>{
+        const w=Math.round(((r.qty||0)/maxQ)*100);
+        const cols=['#d95f5f','#e07a5f','#d4924a','#c9a227','#8a9a5b'];
+        return`<div style="margin-bottom:11px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+            <span style="font-weight:700;color:#2d3e50;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%">${r.grup||'-'} <span style="color:var(--mu);font-weight:400">${r.jenis||''}</span></span>
+            <strong style="color:${cols[i]}">${r.qty}</strong>
+          </div>
+          <div style="height:8px;background:#eef2f7;border-radius:5px;overflow:hidden"><div style="height:100%;width:${w}%;background:${cols[i]};border-radius:5px;transition:width .4s"></div></div>
+        </div>`;
+      }).join('');
+    }
   }
 }
 
@@ -1984,7 +2209,9 @@ async function addSKU(){
   try{
     await db.ref('sparepart').push({sku:kode,nama,kat,sat,stok,min});
     if(stok>0){
-      await db.ref('transaksi').push({ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,sparepart:nama,sku:kode,kat,tipe:'masuk',qty:stok,ket:'Stok awal',approved:true,approvedAt:nowDate()+' '+nowTime()});
+      // Transaksi 'Stok awal' hanya sebagai catatan riwayat. Diberi penanda isInitial
+      // supaya edit/batal/hapus TIDAK mengubah stok (stok awal sudah jadi nilai stok, bukan mutasi).
+      await db.ref('transaksi').push({ts:Date.now(),tanggal:nowDate(),waktu:nowTime(),karyawan:currentUser.nama,sparepart:nama,sku:kode,kat,tipe:'masuk',qty:stok,ket:'Stok awal',approved:true,approvedAt:nowDate()+' '+nowTime(),isInitial:true});
     }
     ['sk-kode','sk-nama','sk-sat','sk-stok','sk-min'].forEach(id=>document.getElementById(id).value='');
     toast('SKU ditambahkan');
@@ -2016,7 +2243,14 @@ async function adjustStokAtomic(spKey,delta){
   });
 }
 function findSp(t){
-  return sArr().find(s=>(s.sku||'').toLowerCase()===(t.sku||'').toLowerCase()||(s.nama||'').toLowerCase()===(t.sparepart||'').toLowerCase());
+  const arr=sArr();
+  // Prioritas 1: cocokkan by SKU (paling andal)
+  if(t.sku){
+    const bySku=arr.find(s=>(s.sku||'').toLowerCase()===(t.sku||'').toLowerCase());
+    if(bySku)return bySku;
+  }
+  // Prioritas 2 (cadangan): cocokkan by nama, hanya kalau transaksi tak punya SKU
+  return arr.find(s=>(s.nama||'').toLowerCase()===(t.sparepart||'').toLowerCase());
 }
 
 async function approveItem(key){
@@ -3678,6 +3912,111 @@ function updateSeedCounts(){
   set('seed-batch',(s.batches||[]).length);
   set('seed-qc',(s.qc||[]).length);
 }
+// ══ CEK KESEHATAN DATA (diagnosa stok vs transaksi) ══
+function cekKesehatanData(){
+  const el=document.getElementById('health-result');if(!el)return;
+  const sp=sArr();
+  const trxAktif=tArr().filter(t=>t.approved); // hanya approved yang pengaruh stok
+  const masalah=[];
+  // 1. Cek tiap SKU: stok tercatat vs stok terhitung dari transaksi approved
+  sp.forEach(s=>{
+    const trxSp=trxAktif.filter(t=>{
+      if(t.sku)return (t.sku||'').toLowerCase()===(s.sku||'').toLowerCase();
+      return (t.sparepart||'').toLowerCase()===(s.nama||'').toLowerCase();
+    });
+    const masuk=trxSp.filter(t=>t.tipe==='masuk').reduce((a,t)=>a+(t.qty||0),0);
+    const keluar=trxSp.filter(t=>t.tipe==='keluar').reduce((a,t)=>a+(t.qty||0),0);
+    const hitung=masuk-keluar;
+    const tercatat=s.stok||0;
+    if(hitung!==tercatat){
+      masalah.push({tipe:'selisih',sku:s.sku,nama:s.nama,tercatat,hitung,masuk,keluar,key:s._key});
+    }
+  });
+  // 2. Cek transaksi nyasar: ada transaksi (approved) yang SKU/nama-nya tidak ketemu di daftar sparepart
+  const skuSet=new Set(sp.map(s=>(s.sku||'').toLowerCase()));
+  const namaSet=new Set(sp.map(s=>(s.nama||'').toLowerCase()));
+  const nyasar=[];
+  trxAktif.forEach(t=>{
+    const adaS=t.sku&&skuSet.has((t.sku||'').toLowerCase());
+    const adaN=namaSet.has((t.sparepart||'').toLowerCase());
+    if(!adaS&&!adaN)nyasar.push(t);
+  });
+  // Render hasil
+  let html='';
+  if(!masalah.length&&!nyasar.length){
+    html='<div style="background:#e3f6ea;border:1.5px solid #b8e6c9;border-radius:10px;padding:14px;text-align:center;color:#2e7d55;font-weight:700">✓ Semua data sehat! Stok cocok dengan transaksi.</div>';
+  }else{
+    if(masalah.length){
+      window.__healthMasalah=masalah; // simpan untuk perbaiki semua
+      html+=`<div style="background:#fdf5ea;border:1.5px solid #eecfa0;border-radius:10px;padding:12px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+          <span style="font-weight:800;color:#8a6d3b;font-size:13px">⚠️ ${masalah.length} SKU stoknya tidak cocok</span>
+          <button onclick="perbaikiSemuaStok()" style="font-size:12px;font-weight:800;color:#fff;background:#4f7c6e;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font-family:inherit;box-shadow:0 2px 6px rgba(79,124,110,.3)">✓ Perbaiki Semua Sekaligus</button>
+        </div>
+        ${masalah.map(m=>`<div style="font-size:12px;padding:8px 0;border-top:1px solid #f0e2c8">
+          <div style="font-weight:700">${m.nama} <span style="color:var(--mu);font-weight:400">(${m.sku})</span></div>
+          <div style="color:var(--mu);margin-top:2px">Stok tercatat: <strong style="color:#d95f5f">${m.tercatat}</strong> &bull; Seharusnya: <strong style="color:#3a6358">${m.hitung}</strong> (masuk ${m.masuk} − keluar ${m.keluar})</div>
+          <button onclick="perbaikiStok('${m.key}',${m.hitung})" style="margin-top:6px;font-size:11px;font-weight:700;color:#4f7c6e;background:#eef7f2;border:1.5px solid #b2dfca;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:inherit">Perbaiki ini ke ${m.hitung}</button>
+        </div>`).join('')}
+      </div>`;
+    }
+    if(nyasar.length){
+      window.__healthNyasar=nyasar; // simpan untuk hapus semua
+      html+=`<div style="background:#fdf0f0;border:1.5px solid #f0c0c0;border-radius:10px;padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+          <span style="font-weight:800;color:#b83c3c;font-size:13px">🔍 ${nyasar.length} transaksi nyasar</span>
+          <button onclick="hapusSemuaNyasar()" style="font-size:12px;font-weight:800;color:#fff;background:#d95f5f;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font-family:inherit;box-shadow:0 2px 6px rgba(217,95,95,.3)">🗑 Hapus Semua yang Nyasar</button>
+        </div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:6px">SKU ini tidak ada di daftar sparepart (data lama / SKU terhapus):</div>
+        ${nyasar.slice(0,20).map(t=>`<div style="font-size:12px;padding:6px 0;border-top:1px solid #f5d5d5">
+          <span style="font-weight:700">${t.sparepart||'-'}</span> <span style="color:var(--mu)">${t.sku?'('+t.sku+')':''}</span> — ${t.tipe==='masuk'?'+':'-'}${t.qty} &bull; ${t.tanggal}${t.ket&&t.ket!=='-'?' &bull; '+t.ket:''}
+        </div>`).join('')}
+        ${nyasar.length>20?`<div style="font-size:11px;color:var(--mu);margin-top:6px">...dan ${nyasar.length-20} lagi (semua akan ikut terhapus)</div>`:''}
+      </div>`;
+    }
+  }
+  el.innerHTML=html;
+}
+async function perbaikiSemuaStok(){
+  const masalah=window.__healthMasalah||[];
+  if(!masalah.length)return toast('Tidak ada yang perlu diperbaiki');
+  showConfirm('Perbaiki SEMUA stok?',masalah.length+' SKU akan di-set ke angka yang benar (sesuai hitungan transaksi approved). Aman — hanya menyesuaikan angka stok.',async()=>{
+    let ok=0;
+    try{
+      for(const m of masalah){
+        await db.ref('sparepart/'+m.key+'/stok').set(Math.max(0,m.hitung));
+        ok++;
+      }
+      toast('✓ '+ok+' stok diperbaiki');
+      setTimeout(()=>cekKesehatanData(),600);
+    }catch(e){toast('Gagal: '+e.message+' (berhasil '+ok+')','e')}
+  });
+}
+async function hapusSemuaNyasar(){
+  const nyasar=window.__healthNyasar||[];
+  if(!nyasar.length)return toast('Tidak ada transaksi nyasar');
+  showConfirm('Hapus SEMUA transaksi nyasar?',nyasar.length+' transaksi (dari SKU yang sudah tidak ada) akan dipindah ke tab Dihapus. Tidak mempengaruhi stok SKU yang masih ada.',async()=>{
+    let ok=0;
+    try{
+      for(const t of nyasar){
+        await db.ref('transaksi/'+t._key).update({deleted:true,deletedAt:nowDate()+' '+nowTime(),deletedBy:currentUser.nama,approved:false});
+        ok++;
+      }
+      toast('✓ '+ok+' transaksi nyasar dihapus');
+      setTimeout(()=>cekKesehatanData(),600);
+    }catch(e){toast('Gagal: '+e.message+' (berhasil '+ok+')','e')}
+  });
+}
+async function perbaikiStok(spKey,nilaiBenar){
+  showConfirm('Perbaiki stok?','Set stok ke '+nilaiBenar+' (sesuai hitungan transaksi approved).',async()=>{
+    try{
+      await db.ref('sparepart/'+spKey+'/stok').set(Math.max(0,nilaiBenar));
+      toast('Stok diperbaiki ke '+nilaiBenar);
+      setTimeout(()=>cekKesehatanData(),500);
+    }catch(e){toast('Gagal: '+e.message,'e')}
+  });
+}
+
 async function importSeedData(){
   const s=window.__SEED_DATA__;
   if(!s)return toast('Data import tidak ditemukan','e');
